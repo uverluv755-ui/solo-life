@@ -1,0 +1,1 @@
+{"name": "SOLO LIFE — 人生覚醒RPG", "short_name": "SOLO LIFE", "start_url": "./index.html", "display": "standalone", "background_color": "#090f1d", "theme_color": "#090f1d", "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}]}
