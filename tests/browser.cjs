@@ -8,8 +8,8 @@ const C = require('../progress.js');
 const root = path.resolve(__dirname, '..');
 const output = process.env.TEST_OUTPUT || path.join(root, 'test-results');
 fs.mkdirSync(output, { recursive: true });
-let legacyMode = false, v03Mode = false, nextWorker = false, disconnect = false;
-const v03Files = Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name => [name, execFileSync('git', ['show', '92839fb:' + name], { cwd: root })]));
+let legacyMode = false, previousVersion = null, nextWorker = false, disconnect = false;
+const previousAssets = Object.fromEntries([['v0.3', '92839fb'], ['v0.4', '9dc9e53']].map(([version, revision]) => [version, Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name => [name, execFileSync('git', ['show', revision + ':' + name], { cwd: root })]))]));
 const oldHtml = execFileSync('git', ['show', 'a200901:index.html'], { cwd: root });
 const oldWorker = execFileSync('git', ['show', 'a200901:sw.js'], { cwd: root });
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -18,10 +18,10 @@ const server = http.createServer((req, res) => {
   let name = new URL(req.url, 'http://localhost').pathname.replace(/^\/solo-life\//, '') || 'index.html';
   if (!/^[\w.-]+$/.test(name) || !fs.existsSync(path.join(root, name))) { res.writeHead(404); res.end(); return; }
   let data = fs.readFileSync(path.join(root, name));
-  if (v03Mode && v03Files[name]) data = v03Files[name];
+  if (previousVersion && previousAssets[previousVersion][name]) data = previousAssets[previousVersion][name];
   if (legacyMode && name === 'index.html') data = oldHtml;
   if (legacyMode && name === 'sw.js') data = oldWorker;
-  if (!legacyMode && nextWorker && name === 'sw.js') data = Buffer.from(data.toString().replace('solo-life-v04-20261105-1', 'solo-life-v04-test-update'));
+  if (!legacyMode && nextWorker && name === 'sw.js') data = Buffer.from(data.toString().replace('solo-life-v05-20261105-1', 'solo-life-v05-test-update'));
   res.writeHead(200, { 'Content-Type': mime[path.extname(name)] || 'application/octet-stream', 'Cache-Control': 'no-store' }); res.end(data);
 });
 const saveOf = page => page.evaluate(() => JSON.parse(localStorage.getItem('solo-life-v01')));
@@ -142,7 +142,7 @@ async function run(engine, url) {
     assert.deepEqual(await saveOf(page), savedBeforeUpdate);
     const cachesAfter = await page.evaluate(() => caches.keys());
     assert.ok(cachesAfter.includes('unrelated-app'));
-    assert.ok(cachesAfter.includes('solo-life-v04-test-update'));
+    assert.ok(cachesAfter.includes('solo-life-v05-test-update'));
     assert.equal(cachesAfter.filter(k => k.startsWith('solo-life-')).length, 1);
     // WebKit's setOffline rejects SW navigations even for literal responses:
     // https://github.com/microsoft/playwright/issues/42775
@@ -161,9 +161,19 @@ async function run(engine, url) {
     assert.deepEqual(errors, []);
     await context.close();
 
-    // Exercise the actual deployed v0.3 HTML, JS and worker before upgrading.
-    nextWorker = false; v03Mode = true;
+    // Exercise both deployed versions before upgrading.
+    for (const previousName of ['v0.3', 'v0.4']) {
+    nextWorker = false; previousVersion = previousName;
     const upgradeContext = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Asia/Tokyo' });
+    // Use a silent audio double to verify opt-in without playing test sounds.
+    await upgradeContext.addInitScript(() => {
+      window.audioStarts = 0; window.audioNotes = 0;
+      window.AudioContext = class {
+        constructor() { window.audioStarts++; this.state = 'running'; this.currentTime = 0; this.destination = {}; }
+        createGain() { return { gain: { setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect() {}, disconnect() {} }; }
+        createOscillator() { return { frequency: {}, connect() {}, disconnect() {}, start() { window.audioNotes++; }, stop() {} }; }
+      };
+    });
     const upgrade = await upgradeContext.newPage();
     upgrade.on('pageerror', error => errors.push(error.message));
     await upgrade.clock.install({ time: new Date('2026-11-05T12:00:00+09:00') });
@@ -181,7 +191,7 @@ async function run(engine, url) {
     await upgrade.waitForFunction(() => !!navigator.serviceWorker.controller);
     assert.equal(await upgrade.locator('#level').innerText(), '3');
     assert.deepEqual(await saveOf(upgrade), fixture);
-    v03Mode = false;
+    previousVersion = null;
     await upgrade.reload();
     await upgrade.locator('#rankNext').waitFor();
     assert.deepEqual(await saveOf(upgrade), fixture);
@@ -192,11 +202,11 @@ async function run(engine, url) {
     await upgrade.locator('#applyUpdate').click();
     await upgrade.waitForFunction(() => document.getElementById('updateNotice').hidden);
     assert.deepEqual(await saveOf(upgrade), fixture);
-    await upgrade.screenshot({ path: path.join(output, engine + '-v04-status.png'), fullPage: true, scale: 'css', animations: 'disabled' });
+    await upgrade.screenshot({ path: path.join(output, engine + '-v05-status.png'), fullPage: true, scale: 'css', animations: 'disabled' });
     await tab(upgrade, 'focus');
     assert.equal(await upgrade.locator('#minutes').inputValue(), '15');
     assert.equal(await upgrade.locator('#start').isDisabled(), true);
-    await upgrade.screenshot({ path: path.join(output, engine + '-v04-focus.png'), fullPage: true, scale: 'css', animations: 'disabled' });
+    await upgrade.screenshot({ path: path.join(output, engine + '-v05-focus.png'), fullPage: true, scale: 'css', animations: 'disabled' });
     await upgrade.locator('#resetTimer').click();
     await tab(upgrade, 'home');
     await upgrade.getByRole('button', { name: '朝のストレッチを達成', exact: true }).click();
@@ -209,7 +219,7 @@ async function run(engine, url) {
     assert.equal(await upgrade.locator('#awakeningKind').innerText(), 'LEVEL UP');
     assert.equal(await upgrade.locator('#levelTransition').innerText(), 'LV.3 → LV.4');
     assert.equal((await saveOf(upgrade)).totalXp, 300);
-    await upgrade.screenshot({ path: path.join(output, engine + '-v04-level-up.png'), scale: 'css', animations: 'disabled' });
+    await upgrade.screenshot({ path: path.join(output, engine + '-v05-level-up.png'), scale: 'css', animations: 'disabled' });
     await upgrade.locator('#continueGrowth').click();
     await upgrade.reload();
     assert.equal(await upgrade.locator('#awakening[open]').count(), 0);
@@ -225,7 +235,7 @@ async function run(engine, url) {
     assert.match(await upgrade.locator('#awakeningTitle').innerText(), /脈動/);
     assert.equal((await saveOf(upgrade)).totalXp, 420);
     assert.equal(await upgrade.locator('#continueGrowth').evaluate(e => e === document.activeElement), true);
-    await upgrade.screenshot({ path: path.join(output, engine + '-v04-rank-up.png'), scale: 'css', animations: 'disabled' });
+    await upgrade.screenshot({ path: path.join(output, engine + '-v05-rank-up.png'), scale: 'css', animations: 'disabled' });
     await upgrade.setViewportSize({ width: 320, height: 568 });
     const box = await upgrade.locator('#awakening').boundingBox();
     assert.ok(box.x >= 0 && box.x + box.width <= 320 && box.height <= 568);
@@ -237,9 +247,51 @@ async function run(engine, url) {
     assert.equal(await upgrade.locator('#rankPath li').count(), 6);
     assert.match(await upgrade.locator('#rankPath [aria-current="step"]').innerText(), /脈動/);
     assert.equal(await upgrade.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    assert.equal(await upgrade.evaluate(() => window.audioStarts), 0);
+    assert.equal(await upgrade.locator('#bossHealth').innerText(), '40%');
+    const beforePreferences = await saveOf(upgrade);
+    await tab(upgrade, 'records');
+    await upgrade.locator('#soundEnabled').check();
+    assert.equal(await upgrade.evaluate(() => window.audioStarts), 1);
+    await upgrade.locator('#calmMotion').check();
+    await upgrade.reload();
+    await tab(upgrade, 'records');
+    assert.equal(await upgrade.locator('#soundEnabled').isChecked(), true);
+    assert.equal(await upgrade.locator('#calmMotion').isChecked(), true);
+    assert.deepEqual(await saveOf(upgrade), beforePreferences);
+    await upgrade.locator('#previewAwakening').click();
+    assert.equal(await upgrade.locator('#awakeningKind').innerText(), 'AWAKENING PREVIEW');
+    assert.match(await upgrade.locator('#awardDetail').innerText(), /変更なし/);
+    assert.equal(await upgrade.locator('#awakening').evaluate(e => getComputedStyle(e).animationName), 'none');
+    assert.equal(await upgrade.evaluate(() => window.audioNotes), 5);
+    assert.deepEqual(await saveOf(upgrade), beforePreferences);
+    await dismiss(upgrade);
+    await upgrade.locator('#soundEnabled').uncheck();
+    await upgrade.locator('#previewAwakening').click();
+    assert.equal(await upgrade.evaluate(() => window.audioNotes), 5);
+    await dismiss(upgrade);
+    await tab(upgrade, 'home');
+    await upgrade.getByRole('button', { name: '集中して仕事を45分を達成', exact: true }).click();
+    await dismiss(upgrade);
+    await upgrade.getByRole('button', { name: '朝のストレッチを達成', exact: true }).click();
+    assert.equal(await upgrade.locator('#dailyClear').isVisible(), true);
+    assert.match(await upgrade.locator('#toast').innerText(), /DAILY CLEAR/);
+    assert.equal(await upgrade.locator('#bossHealth').innerText(), '20%');
+    assert.equal((await saveOf(upgrade)).totalXp, 520);
+    assert.equal(await upgrade.locator('.growth-core img').evaluate(e => e.complete && e.naturalWidth > 0), true);
+    await upgrade.setViewportSize({ width: 390, height: 844 });
+    await upgrade.screenshot({ path: path.join(output, engine + '-v05-reward.png'), scale: 'css', animations: 'disabled' });
+    await upgrade.reload();
+    assert.equal((await saveOf(upgrade)).totalXp, 520);
+    assert.equal(await upgrade.locator('#awakening[open]').count(), 0);
+    await setTime(upgrade, '2026-11-07T12:00:00+09:00');
+    assert.equal(await upgrade.locator('#dailyClear').isVisible(), false);
+    assert.match(await upgrade.locator('#missionDirective').innerText(), /4件/);
+    console.log(engine + ': silent defaults, sound opt-in/off, saved motion preferences, no-XP preview, daily clear/reset, raid barrier and original portrait passed');
     await upgradeContext.close();
     assert.deepEqual(errors, []);
-    console.log(engine + ': actual v0.3 worker upgrade preserves 200 XP, LV3, custom quests, full history, stats and active timer; level/rank dialogs, no replay and reduced motion passed');
+    console.log(engine + ': actual ' + previousName + ' worker upgrade preserves 200 XP, LV3, custom quests, full history, stats and active timer; level/rank dialogs, no replay and reduced motion passed');
+    }
 
     const corruptContext = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'block' });
     await corruptContext.addInitScript(() => localStorage.setItem('solo-life-v01', '{broken-save'));
@@ -261,6 +313,25 @@ async function run(engine, url) {
     assert.deepEqual(await saveOf(fullPage), before);
     await fullContext.close();
     console.log(engine + ': full storage never overwrites the original save during migration');
+
+    const failureSave = C.fresh(); failureSave.totalXp = 80;
+    const failureContext = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'block', acceptDownloads: true });
+    await failureContext.addInitScript(data => {
+      localStorage.setItem('solo-life-v01', JSON.stringify(data));
+      Storage.prototype.setItem = function () { throw new DOMException('Storage full', 'QuotaExceededError'); };
+    }, failureSave);
+    const failurePage = await failureContext.newPage();
+    await failurePage.goto(url);
+    await failurePage.getByRole('button', { name: '筋力トレーニングを達成', exact: true }).click();
+    await failurePage.locator('#awakening[open]').waitFor();
+    assert.match(await failurePage.locator('#awakeningFootnote').innerText(), /未保存/);
+    assert.equal((await saveOf(failurePage)).totalXp, 80);
+    await tab(failurePage, 'records');
+    const recoveryDownload = failurePage.waitForEvent('download');
+    await failurePage.locator('#export').click();
+    assert.equal(JSON.parse(fs.readFileSync(await (await recoveryDownload).path())).totalXp, 160);
+    await failureContext.close();
+    console.log(engine + ': failed saves are reported inside the awakening dialog and unsaved progress remains exportable');
   } finally { await browser.close(); }
 }
 

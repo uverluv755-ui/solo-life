@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090f1d">
+<meta name="theme-color" content="#060a16">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="SOLO LIFE">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -12,7 +12,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="stylesheet" href="./app.css?v=0.4.0">
+<link rel="stylesheet" href="./app.css?v=0.5.0">
 </head>
 <body>
 <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -41,16 +41,16 @@
 <a class="brand" href="#home" aria-label="SOLO LIFE ステータス">
 <svg class="icon">
 <use href="#i-core"/>
-</svg>SOLO LIFE<span class="version">v0.4</span>
+</svg>SOLO LIFE<span class="version">v0.5</span>
 </a>
 <span class="system-state">
 <i>
-</i> SYSTEM READY</span>
+</i> SYSTEM ACTIVE</span>
 </header>
 <div class="page-intro">
-<p class="eyebrow" id="pageEyebrow">YOUR NEXT CHAPTER</p>
-<h1 id="pageTitle">日常から、覚醒へ。</h1>
-<p class="muted" id="pageDescription">今日の一歩が、まだ見ぬ自分をつくる。</p>
+<p class="eyebrow" id="pageEyebrow">AWAKENING PROTOCOL / 01</p>
+<h1 id="pageTitle">その限界を、更新せよ。</h1>
+<p class="muted" id="pageDescription">現実の行動が、次の覚醒を引き起こす。</p>
 </div>
 <noscript>
 <p class="warning">SafariでJavaScriptを有効にして開いてください。</p>
@@ -64,29 +64,23 @@
 <section class="screen active" id="home" aria-label="ステータス">
 <div class="panel status-panel">
 <div class="section-head">
-<span class="eyebrow">PLAYER STATUS</span>
-<span class="status-chip">成長を記録中</span>
+<span class="eyebrow">PLAYER STATUS <span class="status-code">// 01</span></span>
+<span class="status-chip">成長記録・接続済</span>
 </div>
 <div class="level">
 <div>
-<div class="level-caption">現在のレベル</div>
+<div class="level-caption">PLAYER LEVEL</div>
 <div class="big">
 <span class="lv-label">LV.</span>
 <span id="level">1</span>
 </div>
 <div class="rank" id="rank">I · 灯火</div>
+<div class="player-title" id="playerTitle">覚醒の途上</div>
 </div>
 <div class="growth-core" aria-hidden="true">
-<div class="orbit orbit-one">
-</div>
-<div class="orbit orbit-two">
-</div>
-<div class="core-light">
-</div>
-<svg>
-<use href="#i-core"/>
-</svg>
-<span>INNER LIGHT</span>
+<div class="aura"></div>
+<img src="./awakening.svg" width="440" height="520" alt="">
+<span>AWAKENING ENTITY</span>
 </div>
 </div>
 <div class="xp-label">
@@ -113,9 +107,12 @@
 <p class="note">ランクはレベルに連動します。ランクが上がっても、経験値や能力値はそのまま積み重なります。</p>
 </details>
 </div>
+<aside class="system-message" aria-label="システムからのメッセージ">
+<div class="message-marker" aria-hidden="true">!</div><div><p class="eyebrow">SYSTEM MESSAGE</p><p id="missionDirective">本日の任務を確認。行動を開始せよ。</p><small id="dailyStatus"></small></div>
+</aside>
 <div class="section-head abilities-heading">
-<h2>能力値</h2>
-<span class="eyebrow">6 ABILITIES</span>
+<h2>能力値 <span class="heading-en">ATTRIBUTES</span></h2>
+<span class="eyebrow" id="abilityTotal">TOTAL 60</span>
 </div>
 <div class="stats" id="stats">
 </div>
@@ -125,7 +122,8 @@
 <span class="counter" id="progress">
 </span>
 </div>
-<p class="section-note">小さな達成を、確かな力に。</p>
+<p class="section-note">DAILY ORDERS / 現実の行動を完了して報酬を獲得</p>
+<div id="dailyClear" class="daily-clear" hidden><b>DAILY CLEAR</b><span>本日の任務、完遂。</span></div>
 <div id="quests">
 </div>
 <button class="text-button" id="createQuest">＋ クエストを作成</button>
@@ -139,11 +137,14 @@
 </div>
 <p class="note">1日1件の達成で継続。今日の達成前は、昨日までの連続日数を表示します。</p>
 <div class="weekly-challenge">
-<p class="eyebrow">WEEKLY CHALLENGE</p>
+<p class="eyebrow">WEEKLY RAID / 週間試練</p>
+<div class="boss-visual" aria-hidden="true"><div class="boss-sigil"></div><span>THE KEEPER</span></div>
 <h2 id="boss">
 </h2>
 <small id="bossCount">
 </small>
+<div class="boss-health"><span>障壁残量</span><b id="bossHealth">100%</b></div>
+<div class="bar barrier-bar" aria-hidden="true"><div class="fill" id="barrierFill"></div></div>
 <div class="bar" id="bossBar" role="progressbar" aria-label="週間ボス討伐の進捗" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0">
 <div class="fill" id="bossFill">
 </div>
@@ -164,12 +165,12 @@
 </p>
 <p class="note">月曜日に新しい週間ボスが登場。10件達成で討伐。集中セッションは週間XPに加算されます。</p>
 </div>
-<p class="end-note">一歩ずつ。あなたのペースで。</p>
+<p class="end-note">THE NEXT LEVEL IS YOURS.</p>
 </section>
 <section class="screen" id="missions" aria-label="クエスト">
 <div class="panel">
-<p class="eyebrow">CREATE A QUEST</p>
-<h2>次の一歩を決めよう。</h2>
+<p class="eyebrow">QUEST REGISTRATION</p>
+<h2>新たな任務を登録。</h2>
 <label for="qname">クエスト名</label>
 <input id="qname" maxlength="40" placeholder="例：ウォーキング30分" enterkeyhint="done">
 <label for="qstat">育てる能力</label>
@@ -183,9 +184,9 @@
 </select>
 <label for="qxp">獲得経験値</label>
 <select id="qxp">
-<option value="20">20 XP · 小さな挑戦</option>
-<option value="40" selected>40 XP · いつもの挑戦</option>
-<option value="80">80 XP · 大きな挑戦</option>
+<option value="20">20 XP · 難易度 I</option>
+<option value="40" selected>40 XP · 難易度 II</option>
+<option value="80">80 XP · 難易度 III</option>
 </select>
 <button class="primary" id="add">＋ クエストを追加</button>
 <p class="note">達成状態は毎日リセット。報酬は1日1回、実際に取り組んでから受け取れます。クエストを削除しても過去の記録は残ります。</p>
@@ -198,17 +199,17 @@
 </section>
 <section class="screen" id="focus" aria-label="集中タイマー">
 <div class="panel focus-panel">
-<p class="eyebrow">FOCUS SESSION</p>
-<h2>目の前のことに、深く。</h2>
-<p class="muted">集中した時間も、あなたの力になる。</p>
+<p class="eyebrow">FOCUS CHAMBER</p>
+<h2>集中領域を展開。</h2>
+<p class="muted">雑念を遮断。目の前の任務に意識を向けよ。</p>
 <div class="timer-ring" id="timerRing">
 <div>
-<p class="eyebrow" id="timerState">READY TO FOCUS</p>
+<p class="eyebrow" id="timerState">STANDBY</p>
 <div class="timer" id="timer" role="timer" aria-label="残りの集中時間">25:00</div>
-<span class="note" id="timerHint">ひとつのことに、意識を向けよう。</span>
+<span class="note" id="timerHint">集中領域への接続を待機中。</span>
 </div>
 </div>
-<button class="primary" id="start">集中を開始</button>
+<button class="primary" id="start">集中領域へ入る</button>
 <button class="secondary" id="resetTimer" disabled>中断する</button>
 <div class="focus-settings">
 <div class="focus-reward">完了報酬 <b>＋40 XP</b>
@@ -227,8 +228,8 @@
 </section>
 <section class="screen" id="records" aria-label="成長記録">
 <div class="panel">
-<p class="eyebrow">YOUR JOURNEY</p>
-<h2>積み重ねた、成長の証。</h2>
+<p class="eyebrow">PLAYER ARCHIVE</p>
+<h2>成長記録を展開。</h2>
 <p id="summary">
 </p>
 <p id="bossRecord" class="note">
@@ -240,9 +241,15 @@
 </div>
 <div id="achievements">
 </div>
-<h2 class="subheading">最近の獲得履歴</h2>
+<h2 class="subheading">システムログ <span class="heading-en">REWARDS</span></h2>
 <div id="history">
 </div>
+</div>
+<div class="panel presentation-panel">
+<p class="eyebrow">SYSTEM CONFIGURATION</p><h2>演出設定</h2>
+<label class="setting-row" for="soundEnabled"><span>システム効果音<small>達成・覚醒時の短い電子音</small></span><input type="checkbox" id="soundEnabled" role="switch"></label>
+<label class="setting-row" for="calmMotion"><span>演出を控えめに<small>発光・動きを止めて静かに表示</small></span><input type="checkbox" id="calmMotion" role="switch"></label>
+<button class="secondary" id="previewAwakening">覚醒演出をプレビュー</button><p class="note" id="presentationNote">効果音は初期状態でOFF。プレビューではXP・能力値は変わりません。</p>
 </div>
 <div class="panel">
 <h2>セーブデータ</h2>
@@ -252,7 +259,7 @@
 <input type="file" id="import" accept="application/json,.json">
 <p class="note">旧バージョンのバックアップも読み込めます。過去の記録は保存されている範囲で復元します。端末間の自動同期には対応していません。</p>
 <button class="secondary" id="checkUpdate">更新を確認</button>
-<p class="note" id="appVersion">SOLO LIFE v0.4 · build 0.4.0</p>
+<p class="note" id="appVersion">SOLO LIFE v0.5 · build 0.5.0</p>
 </div>
 </section>
 </main>
@@ -286,26 +293,25 @@
 </nav>
 <dialog id="awakening" class="awakening" aria-labelledby="awakeningTitle" aria-describedby="awakeningText">
 <div class="awakening-content">
+<div class="awakening-rays" aria-hidden="true"></div>
 <p class="eyebrow" id="awakeningKind">LEVEL UP</p>
 <div class="awakening-symbol" aria-hidden="true">
-<svg>
-<use href="#i-core"/>
-</svg>
+<span class="awakening-number" id="awakeningNumber">2</span>
 </div>
 <p class="level-transition" id="levelTransition">
 </p>
-<h2 id="awakeningTitle">新しい自分へ。</h2>
+<h2 id="awakeningTitle">限界を突破。</h2>
 <p id="awakeningText">
 </p>
 <div class="award-detail" id="awardDetail">
 </div>
-<button class="primary" id="continueGrowth" autofocus>次の一歩へ</button>
-<p class="note">成長は、あなたの中に。</p>
+<button class="primary" id="continueGrowth" autofocus>能力の更新を確認</button>
+<p class="note" id="awakeningFootnote">SYSTEM / 成長記録を更新しました</p>
 </div>
 </dialog>
-<script src="./progress.js?v=0.4.0">
+<script src="./progress.js?v=0.5.0">
 </script>
-<script src="./app.js?v=0.4.0">
+<script src="./app.js?v=0.5.0">
 </script>
 </body>
 </html>

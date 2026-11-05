@@ -1,0 +1,28 @@
+SOLO LIFE v0.5 — 既存のテスト画像を保持する実行方法
+
+PowerShellでリポジトリのルートを開き、インストール済みの依存関係を使用して実行します。
+
+  node --test tests/progress.test.cjs
+  $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path (Get-Location) 'node_modules/.cache/ms-playwright'
+  node tests/browser-preserve.cjs
+
+browser-preserve.cjs は既存の browser.cjs と同じ検証を実行します。
+テスト用サーバーの接続先は 127.0.0.1 です。普段使うブラウザのセーブにはアクセスしません。
+毎回 test-results/preserved-run-<ランダム文字列> を新規作成します。
+同じ実行内でも連番を付け、旧版ごとの移行テストで画像名が重複しないようにします。
+画像はメモリーで受け取り、排他的な新規作成（wx）で保存します。
+既存画像を上書きせず、過去の結果の自動削除も行いません。
+TEST_OUTPUT は新規実行フォルダーを作る親フォルダーとして指定できます。
+
+従来の npm run test:browser は同じ画像名を再利用するため、今回の調査後は上記の保存用実行方法を使用します。
+既存ファイルを変更しない条件に合わせ、package.json と browser.cjs の実行入口はこの対応では書き換えていません。
+AcronisやNortonの設定変更、除外登録、Node.jsの改名・置換は不要です。
+保護機能が再度停止した場合は許可設定で回避せず、その実行を中止して記録を確認してください。
+
+2026-11-06 検証結果
+データ処理13件が成功。ChromeとPlaywright WebKitの全ブラウザ検証が成功。
+v0.2/v0.3/v0.4からの移行、200XP・LV3・履歴・能力値・自作クエスト・タイマー維持、
+覚醒・報酬・音設定・プレビュー・日付更新・バックアップ・保存失敗・PWA更新・オフラインを検証。
+新規スクリーンショット24枚を作成。調査開始時の既存42ファイルはハッシュ一致。
+これは機能テストの結果です。ウイルス検査完了を意味しません。
+実機iPhoneではなく、Windows上のChromeとPlaywright WebKitによる検証です。

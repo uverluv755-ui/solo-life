@@ -1,6 +1,6 @@
 'use strict';
-const CACHE = 'solo-life-v04-20261105-1';
-const ASSETS = ['./', './index.html', './app.css?v=0.4.0', './progress.js?v=0.4.0', './app.js?v=0.4.0', './manifest.webmanifest', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png'];
+const CACHE = 'solo-life-v05-20261105-1';
+const ASSETS = ['./', './index.html', './app.css?v=0.5.0', './progress.js?v=0.5.0', './app.js?v=0.5.0', './manifest.webmanifest', './awakening.svg', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png'];
 const scope = new URL(self.registration.scope);
 const assetUrls = new Set(ASSETS.map(path => new URL(path, scope).href));
 self.addEventListener('install', event => {
