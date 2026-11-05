@@ -1,1 +1,36 @@
-const CACHE='solo-life-v03';self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html','./manifest.webmanifest','./icon.svg'])));self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(Promise.all([caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('solo-life-')&&k!==CACHE).map(k=>caches.delete(k)))),self.clients.claim()]))});self.addEventListener('fetch',e=>{if(e.request.method==='GET'&&new URL(e.request.url).origin===self.location.origin)e.respondWith(fetch(e.request).catch(()=>caches.match(e.request)))});
+'use strict';
+const CACHE = 'solo-life-v03-20261105-1';
+const ASSETS = ['./', './index.html', './app.css?v=0.3.1', './progress.js?v=0.3.1', './app.js?v=0.3.1', './manifest.webmanifest', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png'];
+const scope = new URL(self.registration.scope);
+const assetUrls = new Set(ASSETS.map(path => new URL(path, scope).href));
+self.addEventListener('install', event => {
+  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS.map(path => new Request(new URL(path, scope), { cache: 'reload' })))));
+});
+self.addEventListener('message', event => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
+self.addEventListener('activate', event => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(key => key.startsWith('solo-life-') && key !== CACHE).map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+  if (event.request.method !== 'GET' || url.origin !== scope.origin || !url.pathname.startsWith(scope.pathname)) return;
+  const navigation = event.request.mode === 'navigate' && (url.pathname === scope.pathname || url.pathname === scope.pathname + 'index.html');
+  if (!navigation && !assetUrls.has(url.href)) return;
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    const key = navigation ? new URL('./index.html', scope).href : event.request;
+    try {
+      const response = await fetch(event.request, { cache: 'no-cache' });
+      if (!response.ok) throw new Error('Offline fallback');
+      try { await cache.put(key, response.clone()); } catch { /* Storage may be full. */ }
+      return response;
+    } catch {
+      return (await cache.match(key)) || new Response('オフラインです。接続後にもう一度開いてください。', { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    }
+  })());
+});

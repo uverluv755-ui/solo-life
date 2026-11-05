@@ -1,9 +1,99 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#090f1d"><meta name="apple-mobile-web-app-capable" content="yes"><title>SOLO LIFE | 人生覚醒RPG</title><link rel="manifest" href="manifest.webmanifest"><meta name="apple-mobile-web-app-title" content="SOLO LIFE"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><style>
-:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN',sans-serif;background:#090f1d;color:#eef4ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -15%,#19335a,#090f1d 55%);min-height:100dvh}.wrap{max-width:520px;margin:auto;padding:24px 18px 110px}header{display:flex;justify-content:space-between;align-items:center;color:#8eacd6;font-size:12px;letter-spacing:2px}.tag{border:1px solid #33547a;border-radius:30px;padding:6px 10px;letter-spacing:0;color:#77c5ff}h1{font-size:31px;letter-spacing:3px;margin:22px 0 3px;text-shadow:0 0 25px #3e86d8}small,.muted{color:#9db0cb}.panel{background:linear-gradient(145deg,#15243c,#101b2e);border:1px solid #2a4465;border-radius:17px;padding:18px;margin-top:18px;box-shadow:0 10px 30px #0003}.level{display:flex;align-items:center;justify-content:space-between}.big{font-size:38px;font-weight:800;color:#eaf5ff}.rank{font-size:12px;color:#9ad6ff}.bar{height:9px;border-radius:20px;background:#27374e;overflow:hidden;margin:13px 0 5px}.fill{height:100%;background:linear-gradient(90deg,#2e75e4,#72d5ff);transition:width .3s}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:15px}.stat{background:#1a2a42;border:1px solid #2a3d59;border-radius:12px;padding:12px 5px;text-align:center}.stat b{font-size:22px;display:block;margin-top:5px}.stat span{font-size:12px;color:#afc3df}h2{font-size:17px;margin:0 0 14px}.quest{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #2a3b52}.quest:last-child{border-bottom:0}.quest button{background:#1b3453;border:1px solid #4d8bc1;color:#e7f6ff;border-radius:10px;width:39px;height:39px;font-size:20px;flex-shrink:0}.quest button:disabled{opacity:.45}.quest .name{flex:1;font-weight:600;font-size:14px}.quest .xp{color:#69c7ff;font-size:12px}.done{text-decoration:line-through;color:#8292a9}.primary{width:100%;padding:14px;background:linear-gradient(120deg,#2874d9,#1c9ec5);border:0;border-radius:11px;color:white;font-size:15px;font-weight:700;margin-top:13px}input,select{width:100%;background:#0b172a;border:1px solid #35506d;color:#fff;border-radius:9px;padding:12px;font-size:16px;margin:5px 0 10px}label{font-size:12px;color:#9db4d3}.tabs{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;background:#0d1728ee;border-top:1px solid #29405b;padding:12px 8px calc(12px + env(safe-area-inset-bottom));backdrop-filter:blur(12px)}.tabs button{flex:1;max-width:170px;background:none;border:0;color:#9fb0c7;font-size:12px;padding:7px}.tabs button.active{color:#68c8ff;font-weight:bold}.screen{display:none}.screen.active{display:block}.timer{text-align:center;font-size:56px;font-weight:800;letter-spacing:3px;margin:25px 0}.note{font-size:12px;line-height:1.7;color:#93a8c2}.toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:#204d78;color:white;border:1px solid #67b7ff;border-radius:12px;padding:13px 20px;z-index:10;display:none;max-width:90%;text-align:center}.secondary{background:#172c45;border:1px solid #416488;color:#d6eaff;border-radius:9px;padding:11px;margin:6px 4px 0 0}.history{font-size:13px;color:#b6c6dc;padding:8px 0;border-bottom:1px solid #283b52}button{cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid #70cbff}
-</style></head><body><div class="toast" id="toast" role="status"></div><div class="wrap"><header><strong>SOLO LIFE // SYSTEM</strong><span class="tag">PROTOTYPE 0.3</span></header><h1>人生を攻略せよ。</h1><small>現実の行動が、あなたの力になる。</small>
-<p id="storageWarning" hidden style="background:#5d2c2c;padding:12px;border-radius:9px;color:#fff">この表示環境では進捗を保存できません。Safariで公開URLを開いてください。</p><section class="screen active" id="home"><div class="panel"><div class="level"><div><div class="muted" style="font-size:12px">PLAYER STATUS</div><div class="big">LV <span id="level">1</span></div><div class="rank" id="rank">E RANK / 覚醒者</div></div><div style="font-size:55px;filter:drop-shadow(0 0 15px #367fe6)">⚔️</div></div><div class="bar"><div class="fill" id="xpfill"></div></div><small id="xptext">0 / 100 XP</small><div class="stats" id="stats"></div></div><div class="panel"><h2>⚡ 本日のクエスト</h2><div id="quests"></div><small id="progress"></small></div><div class="panel"><h2>🔥 継続と週間ボス</h2><div id="streak"></div><div id="boss"></div></div></section>
-<section class="screen" id="missions"><div class="panel"><h2>📜 クエスト作成</h2><label for="qname">クエスト名</label><input id="qname" maxlength="40" placeholder="例：ウォーキング30分"><label for="qstat">上昇する能力</label><select id="qstat"><option value="strength">筋力</option><option value="intellect">知力</option><option value="mind">精神力</option><option value="wealth">財力</option><option value="health">健康</option><option value="discipline">継続力</option></select><label for="qxp">獲得経験値</label><select id="qxp"><option value="20">20 XP（簡単）</option><option value="40" selected>40 XP（普通）</option><option value="80">80 XP（難しい）</option></select><button class="primary" id="add">クエストを追加</button><p class="note">クエストは毎日リセットされます。達成したクエストはその日一度だけ報酬を受け取れます。</p></div><div class="panel"><h2>登録クエスト</h2><div id="manage"></div></div></section>
-<section class="screen" id="focus"><div class="panel"><h2>⏳ 集中ダンジョン</h2><p class="muted">集中時間をクリアして知力と経験値を獲得。</p><label for="minutes">挑戦時間</label><select id="minutes"><option value="1">1分（動作確認用）</option><option value="15">15分</option><option value="25" selected>25分</option><option value="45">45分</option></select><div class="timer" id="timer">25:00</div><button class="primary" id="start">集中を開始</button><button class="secondary" id="resetTimer">中断する</button><p class="note">タイマー完了時に +40 XP。画面を閉じても経過時間を基準に判定しますが、通知はありません。</p></div></section>
-<section class="screen" id="records"><div class="panel"><h2>🏆 冒険記録</h2><p id="summary"></p><h2>🏅 獲得称号</h2><div id="achievements"></div><h2>最近の獲得履歴</h2><div id="history"></div></div><div class="panel"><h2>💾 セーブデータ</h2><p class="note">この端末のブラウザ内に自動保存されます。ブラウザデータ削除や別端末への移動に備えてバックアップしてください。</p><button class="secondary" id="export">バックアップを書き出す</button><label for="import" style="display:block;margin-top:14px">バックアップを読み込む</label><input type="file" id="import" accept="application/json,.json"><p class="note">正式公開時にはアカウント同期とクラウド保存を追加予定です。</p></div></section></div><nav class="tabs" aria-label="メニュー"><button data-tab="home" class="active">⚔️<br>ステータス</button><button data-tab="missions">📜<br>クエスト</button><button data-tab="focus">⏳<br>集中</button><button data-tab="records">🏆<br>記録</button></nav><script>
-(()=>{'use strict';const KEY='solo-life-v01',names={strength:'筋力',intellect:'知力',mind:'精神力',wealth:'財力',health:'健康',discipline:'継続力'},defaults=[{id:'training',name:'筋力トレーニング',stat:'strength',xp:80},{id:'work',name:'集中して仕事を45分',stat:'discipline',xp:80},{id:'reading',name:'読書を20分',stat:'intellect',xp:40}];const day=()=>{let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};const fresh=()=>({totalXp:0,stats:Object.fromEntries(Object.keys(names).map(k=>[k,10])),quests:defaults,completed:{},history:[],focusEnd:null,focusMinutes:25});let s;try{s=JSON.parse(localStorage.getItem(KEY))||fresh()}catch{s=fresh()}function valid(x){return x&&Number.isFinite(x.totalXp)&&x.totalXp>=0&&x.stats&&Object.keys(names).every(k=>Number.isFinite(x.stats[k])&&x.stats[k]>=0)&&Array.isArray(x.quests)&&Array.isArray(x.history)&&x.completed&&typeof x.completed==='object'}if(!valid(s))s=fresh();const $=id=>document.getElementById(id);function save(){try{localStorage.setItem(KEY,JSON.stringify(s));$('storageWarning').hidden=true}catch(e){$('storageWarning').hidden=false}}function level(){return Math.floor(s.totalXp/100)+1}function rank(){let l=level();return l>=50?'S':l>=35?'A':l>=25?'B':l>=15?'C':l>=5?'D':'E'}function toast(t){$('toast').textContent=t;$('toast').style.display='block';clearTimeout(window.toastT);window.toastT=setTimeout(()=>$('toast').style.display='none',2800)}function award(xp,stat,label){let before=level();s.totalXp+=xp;s.stats[stat]+=Math.max(1,Math.floor(xp/20));s.history.unshift({label,xp,at:new Date().toISOString()});s.history=s.history.slice(0,100);save();render();toast(level()>before?`LEVEL UP! LV ${level()} に到達！`:`クエスト達成！ +${xp} XP`)}function progressV3(){const daily={};for(const [id,date] of Object.entries(s.completed)){if(typeof date==='string'&&s.quests.some(q=>q.id===id))daily[date]=(daily[date]||0)+1}const today=day(),at=new Date(today+'T12:00:00');let streak=0;for(let i=0;i<3650;i++){const d=new Date(at);d.setDate(at.getDate()-i);const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');if(!daily[key]){if(i===0)continue;break}streak++}const monday=new Date(at);monday.setDate(at.getDate()-(at.getDay()+6)%7);let weekly=0;for(let i=0;i<7;i++){const d=new Date(monday);d.setDate(monday.getDate()+i);const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');weekly+=daily[key]||0}const badges=[['初めての一歩',s.history.length>=1],['冒険者',s.totalXp>=500],['継続の芽',streak>=3],['七日の覚醒者',streak>=7],['ボス討伐者',weekly>=10]];return {streak,weekly,badges}}function el(tag,cls,txt){let n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n}function render(){let l=level(),p=s.totalXp%100;$('level').textContent=l;$('rank').textContent=rank()+' RANK / 覚醒者';$('xpfill').style.width=p+'%';$('xptext').textContent=p+' / 100 XP';$('stats').replaceChildren(...Object.entries(names).map(([k,n])=>{let e=el('div','stat');e.append(el('span','',n),el('b','',s.stats[k]));return e}));let completed=0;const questRows=s.quests.map(q=>{let done=s.completed[q.id]===day();if(done)completed++;let r=el('div','quest'),b=el('button','',done?'✓':'○'),t=el('div','name'+(done?' done':''),q.name),xp=el('div','xp','+'+q.xp+' XP');b.disabled=done;b.setAttribute('aria-label',q.name+'を達成');b.onclick=()=>{if(s.completed[q.id]===day())return;s.completed[q.id]=day();award(q.xp,q.stat,q.name)};r.append(b,t,xp);return r});$('quests').replaceChildren(...questRows);$('progress').textContent=`本日の達成 ${completed} / ${s.quests.length}`;const pv=progressV3();$('streak').textContent=`連続達成：${pv.streak}日（1日1件以上で継続）`;$('boss').textContent=`週間ボス「継続の番人」：${Math.min(pv.weekly,10)} / 10 クエスト達成 ${pv.weekly>=10?'🏆 討伐成功！':''}`;$('achievements').replaceChildren(...pv.badges.map(([name,ok])=>el('div','history',(ok?'🏅 ':'🔒 ')+name)));$('manage').replaceChildren(...s.quests.map(q=>{let r=el('div','quest'),t=el('div','name',q.name+' / '+names[q.stat]+' / '+q.xp+' XP'),b=el('button','','×');b.setAttribute('aria-label',q.name+'を削除');b.onclick=()=>{s.quests=s.quests.filter(v=>v.id!==q.id);save();render()};r.append(t,b);return r}));$('summary').textContent=`総獲得経験値 ${s.totalXp} XP / 現在レベル ${l} / ${rank()}ランク`;$('history').replaceChildren(...(s.history.length?s.history.slice(0,20).map(h=>el('div','history',`${new Date(h.at).toLocaleString('ja-JP')}　${h.label}　+${h.xp} XP`)):[el('p','muted','まだ記録がありません。')]));}document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tab]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.screen').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));render()});$('add').onclick=()=>{let name=$('qname').value.trim();if(!name)return toast('クエスト名を入力してください');if(s.quests.length>=30)return toast('クエストは最大30件です');s.quests.push({id:'q'+Date.now()+Math.random().toString(36).slice(2,7),name,stat:$('qstat').value,xp:Number($('qxp').value)});$('qname').value='';save();render();toast('クエストを追加しました')};let ticker;function updateTimer(){let remain=s.focusEnd?Math.max(0,Math.ceil((s.focusEnd-Date.now())/1000)):Number($('minutes').value)*60;if(s.focusEnd&&remain===0){s.focusEnd=null;award(40,'intellect','集中ダンジョン');toast('集中ダンジョンクリア！ +40 XP')}let m=Math.floor(remain/60),sec=remain%60;$('timer').textContent=String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');$('start').disabled=!!s.focusEnd;$('minutes').disabled=!!s.focusEnd}function tick(){updateTimer();clearInterval(ticker);ticker=setInterval(updateTimer,1000)}$('minutes').onchange=()=>{if(!s.focusEnd)updateTimer()};$('start').onclick=()=>{if(s.focusEnd)return;s.focusMinutes=Number($('minutes').value);s.focusEnd=Date.now()+s.focusMinutes*60000;save();tick()};$('resetTimer').onclick=()=>{s.focusEnd=null;save();tick();toast('集中を中断しました')};$('export').onclick=()=>{let blob=new Blob([JSON.stringify(s,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='solo-life-backup-'+day()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000)};$('import').onchange=async e=>{let f=e.target.files?.[0];if(!f)return;try{let x=JSON.parse(await f.text());if(!valid(x)||!Array.isArray(x.quests)||x.quests.some(q=>!q||typeof q.id!=='string'||typeof q.name!=='string'||!names[q.stat]||![20,40,80].includes(q.xp)))throw Error('形式が不正');if(!confirm('現在のセーブデータをバックアップの内容で置き換えますか？'))return;s=x;save();render();tick();toast('復元しました')}catch{toast('バックアップを読み込めませんでした')}e.target.value=''};render();save();tick();if('serviceWorker' in navigator && location.protocol==='https:'){navigator.serviceWorker.register('./sw.js').catch(()=>{})}document.addEventListener('visibilitychange',()=>{if(!document.hidden)updateTimer()});})();
-</script></body></html>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#090f1d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="SOLO LIFE">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="毎日の行動を経験値に。クエスト、連続達成、週間ボスで自分を育てる人生RPG。">
+  <title>SOLO LIFE | 人生覚醒RPG</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon-180.png">
+  <link rel="stylesheet" href="./app.css?v=0.3.1">
+</head>
+<body>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <main class="wrap">
+    <header><strong>SOLO LIFE // SYSTEM</strong><span class="tag">PROTOTYPE 0.3</span></header>
+    <h1>人生を攻略せよ。</h1>
+    <small>現実の行動が、あなたの力になる。</small>
+    <noscript><p class="warning">SafariでJavaScriptを有効にして開いてください。</p></noscript>
+    <p id="storageWarning" class="warning" role="alert" hidden></p>
+    <aside id="updateNotice" class="panel update-notice" aria-label="アプリの更新" hidden>
+      <p>新しいバージョンの準備ができました。進捗を保存して更新できます。</p>
+      <button class="primary" id="applyUpdate">最新版に更新</button>
+    </aside>
+    <section class="screen active" id="home" aria-label="ステータス">
+      <div class="panel">
+        <div class="level">
+          <div><div class="muted" style="font-size:12px">PLAYER STATUS</div><div class="big">LV <span id="level">1</span></div><div class="rank" id="rank">E RANK / 覚醒者</div></div>
+          <div style="font-size:55px;filter:drop-shadow(0 0 15px #367fe6)" aria-hidden="true">⚔️</div>
+        </div>
+        <div class="bar"><div class="fill" id="xpfill"></div></div>
+        <small id="xptext">0 / 100 XP</small><div class="stats" id="stats"></div>
+      </div>
+      <div class="panel"><h2>⚡ 本日のクエスト</h2><div id="quests"></div><small id="progress"></small></div>
+      <div class="panel">
+        <div class="streak-line"><div id="streak"></div><small id="bestStreak"></small></div>
+        <p class="note">1日1件以上のクエスト達成で継続。今日の達成前は、昨日までの連続日数を表示します。</p>
+        <h2 id="boss"></h2><small id="bossCount"></small>
+        <div class="bar" id="bossBar" role="progressbar" aria-label="週間ボス討伐の進捗" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"><div class="fill" id="bossFill"></div></div>
+        <p class="note" id="bossHint"></p>
+      </div>
+      <div class="panel">
+        <div class="section-head"><h2>📊 今週の進捗</h2><small id="weekRange"></small></div>
+        <div id="weekDays" class="week-days" aria-label="曜日ごとのクエスト達成数"></div>
+        <p id="weekSummary"></p>
+        <p class="note">月曜日に新しい週間ボスが登場。10件のクエストで討伐できます。集中ダンジョンは週間XPに加算されます。</p>
+      </div>
+    </section>
+    <section class="screen" id="missions" aria-label="クエスト">
+      <div class="panel">
+        <h2>📜 クエスト作成</h2>
+        <label for="qname">クエスト名</label><input id="qname" maxlength="40" placeholder="例：ウォーキング30分">
+        <label for="qstat">上昇する能力</label>
+        <select id="qstat"><option value="strength">筋力</option><option value="intellect">知力</option><option value="mind">精神力</option><option value="wealth">財力</option><option value="health">健康</option><option value="discipline">継続力</option></select>
+        <label for="qxp">獲得経験値</label><select id="qxp"><option value="20">20 XP（簡単）</option><option value="40" selected>40 XP（普通）</option><option value="80">80 XP（難しい）</option></select>
+        <button class="primary" id="add">クエストを追加</button>
+        <p class="note">クエストは毎日リセットされます。達成したクエストはその日一度だけ報酬を受け取れます。削除しても過去の進捗と称号は残ります。</p>
+      </div>
+      <div class="panel"><h2>登録クエスト</h2><div id="manage"></div></div>
+    </section>
+    <section class="screen" id="focus" aria-label="集中ダンジョン">
+      <div class="panel">
+        <h2>⏳ 集中ダンジョン</h2><p class="muted">集中時間をクリアして知力と経験値を獲得。</p>
+        <label for="minutes">挑戦時間</label><select id="minutes"><option value="1">1分（動作確認用）</option><option value="15">15分</option><option value="25" selected>25分</option><option value="45">45分</option></select>
+        <div class="timer" id="timer" role="timer">25:00</div>
+        <button class="primary" id="start">集中を開始</button><button class="secondary" id="resetTimer">中断する</button>
+        <p class="note">タイマー完了時に +40 XP。画面を閉じても経過時間を基準に判定しますが、通知はありません。</p>
+      </div>
+    </section>
+    <section class="screen" id="records" aria-label="冒険記録">
+      <div class="panel">
+        <h2>🏆 冒険記録</h2><p id="summary"></p><p id="bossRecord" class="note"></p>
+        <div class="section-head"><h2>🏅 獲得称号</h2><small id="badgeCount"></small></div>
+        <div id="achievements"></div><h2 class="subheading">最近の獲得履歴</h2><div id="history"></div>
+      </div>
+      <div class="panel">
+        <h2>💾 セーブデータ</h2>
+        <p class="note">この端末のブラウザ内に自動保存されます。ブラウザデータ削除や別端末への移動に備えてバックアップしてください。</p>
+        <button class="secondary" id="export">バックアップを書き出す</button>
+        <label for="import" style="display:block;margin-top:14px">バックアップを読み込む</label><input type="file" id="import" accept="application/json,.json">
+        <p class="note">以前のバージョンのバックアップも読み込めます。過去の進捗は保存されている履歴の範囲で復元されます。端末間の自動同期には対応していません。</p>
+        <button class="secondary" id="checkUpdate">更新を確認</button><p class="note" id="appVersion">SOLO LIFE v0.3 · build 0.3.1</p>
+      </div>
+    </section>
+  </main>
+  <nav class="tabs" aria-label="メニュー">
+    <button data-tab="home" class="active" aria-pressed="true">⚔️<br>ステータス</button>
+    <button data-tab="missions" aria-pressed="false">📜<br>クエスト</button>
+    <button data-tab="focus" aria-pressed="false">⏳<br>集中</button>
+    <button data-tab="records" aria-pressed="false">🏆<br>記録</button>
+  </nav>
+  <script src="./progress.js?v=0.3.1"></script>
+  <script src="./app.js?v=0.3.1"></script>
+</body>
+</html>

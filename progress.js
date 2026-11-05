@@ -1,0 +1,166 @@
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.SoloLife = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  const KEY = 'solo-life-v01';
+  const SCHEMA = 3;
+  const names = { strength: '筋力', intellect: '知力', mind: '精神力', wealth: '財力', health: '健康', discipline: '継続力' };
+  const defaults = [
+    { id: 'training', name: '筋力トレーニング', stat: 'strength', xp: 80 },
+    { id: 'work', name: '集中して仕事を45分', stat: 'discipline', xp: 80 },
+    { id: 'reading', name: '読書を20分', stat: 'intellect', xp: 40 }
+  ];
+  const badges = [
+    { id: 'first-step', name: '初めての一歩', description: '初めて経験値を獲得' },
+    { id: 'adventurer', name: '冒険者', description: '累計500 XPを獲得' },
+    { id: 'three-days', name: '継続の芽', description: '3日連続でクエストを達成' },
+    { id: 'seven-days', name: '七日の覚醒者', description: '7日連続でクエストを達成' },
+    { id: 'boss-slayer', name: 'ボス討伐者', description: '週間ボスを1回討伐' }
+  ];
+  const record = x => !!x && typeof x === 'object' && !Array.isArray(x);
+  const nonnegative = x => Number.isFinite(x) && x >= 0;
+  const count = x => Number.isSafeInteger(x) && x >= 0;
+  const safeId = x => typeof x === 'string' && x.length > 0 && x.length <= 200 && !['__proto__', 'constructor', 'prototype'].includes(x);
+
+  function day(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+  const dateAt = key => new Date(key + 'T12:00:00');
+  const validDay = key => typeof key === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(key) && day(dateAt(key)) === key;
+  function shiftDay(key, amount) {
+    const date = dateAt(key);
+    date.setDate(date.getDate() + amount);
+    return day(date);
+  }
+  const weekStart = key => shiftDay(key, -((dateAt(key).getDay() + 6) % 7));
+  const timestamp = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
+
+  function fresh() {
+    return {
+      totalXp: 0, stats: Object.fromEntries(Object.keys(names).map(k => [k, 10])),
+      quests: defaults.map(q => ({ ...q })), completed: {}, history: [],
+      focusEnd: null, focusMinutes: 25, schemaVersion: SCHEMA,
+      daily: {}, achievements: {}, defeatedBosses: {}
+    };
+  }
+
+  function valid(x) {
+    if (!record(x) || !nonnegative(x.totalXp) || !record(x.stats) ||
+        !Object.keys(names).every(k => nonnegative(x.stats[k])) ||
+        !Array.isArray(x.quests) || !x.quests.every(q => record(q) && safeId(q.id) &&
+          typeof q.name === 'string' && q.name.trim().length > 0 && Object.hasOwn(names, q.stat) && [20, 40, 80].includes(q.xp)) ||
+        new Set(x.quests.map(q => q.id)).size !== x.quests.length ||
+        !record(x.completed) || !Object.entries(x.completed).every(([id, d]) => safeId(id) && validDay(d)) ||
+        !Array.isArray(x.history) || !x.history.every(h => record(h) && typeof h.label === 'string' && nonnegative(h.xp) && timestamp(h.at)) ||
+        !(x.focusEnd == null || nonnegative(x.focusEnd)) ||
+        !(x.focusMinutes === undefined || [1, 15, 25, 45].includes(x.focusMinutes))) return false;
+    if (x.schemaVersion !== undefined && ![1, 2, SCHEMA].includes(x.schemaVersion)) return false;
+    if (x.schemaVersion !== SCHEMA) return true;
+    return record(x.daily) && Object.entries(x.daily).every(([d, v]) => validDay(d) && record(v) &&
+      count(v.quests) && count(v.focus) && nonnegative(v.xp) && Array.isArray(v.questIds) &&
+      v.questIds.every(safeId) && new Set(v.questIds).size === v.questIds.length && v.quests >= v.questIds.length) &&
+      record(x.achievements) && Object.entries(x.achievements).every(([id, at]) => badges.some(b => b.id === id) && timestamp(at)) &&
+      record(x.defeatedBosses) && Object.entries(x.defeatedBosses).every(([d, at]) => validDay(d) && weekStart(d) === d && timestamp(at));
+  }
+
+  function dailyRecord(s, key) {
+    return s.daily[key] ||= { quests: 0, focus: 0, xp: 0, questIds: [] };
+  }
+
+  function migrate(input, now = new Date()) {
+    if (!valid(input)) throw new Error('Invalid save data');
+    const s = JSON.parse(JSON.stringify(input));
+    s.focusEnd ??= null;
+    s.focusMinutes ??= 25;
+    if (s.schemaVersion !== SCHEMA) {
+      s.daily = {};
+      s.achievements = {};
+      s.defeatedBosses = {};
+      // Old saves retain only 100 history rows and the last completion per quest.
+      // Use the larger count per date instead of adding overlapping evidence.
+      for (const h of s.history) {
+        const d = dailyRecord(s, day(new Date(h.at)));
+        if (h.type === 'focus' || (!h.type && h.label === '集中ダンジョン')) d.focus++;
+        else d.quests++;
+        d.xp += h.xp;
+      }
+      for (const [id, key] of Object.entries(s.completed)) {
+        const d = dailyRecord(s, key);
+        d.questIds.push(id);
+        d.quests = Math.max(d.quests, d.questIds.length);
+      }
+      s.schemaVersion = SCHEMA;
+    }
+    unlock(s, now);
+    return s;
+  }
+
+  function progress(s, today = day()) {
+    const activeDays = Object.keys(s.daily).filter(d => d <= today && s.daily[d].quests > 0).sort();
+    let longest = 0, run = 0, previous;
+    for (const key of activeDays) {
+      run = previous && shiftDay(previous, 1) === key ? run + 1 : 1;
+      longest = Math.max(longest, run);
+      previous = key;
+    }
+    let cursor = s.daily[today]?.quests ? today : shiftDay(today, -1), streak = 0;
+    while (s.daily[cursor]?.quests > 0) { streak++; cursor = shiftDay(cursor, -1); }
+    const start = weekStart(today);
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const key = shiftDay(start, i), d = key <= today ? s.daily[key] : null;
+      return { day: key, quests: d?.quests || 0, xp: d?.xp || 0, focus: d?.focus || 0 };
+    });
+    return {
+      streak, longest, start, end: shiftDay(start, 6), days,
+      weekly: days.reduce((n, d) => n + d.quests, 0),
+      weeklyXp: days.reduce((n, d) => n + d.xp, 0),
+      activeDays: days.filter(d => d.quests > 0).length
+    };
+  }
+
+  function unlock(s, now = new Date()) {
+    const today = day(now), at = now.toISOString(), weeks = {};
+    for (const [d, value] of Object.entries(s.daily)) {
+      if (d <= today) { const start = weekStart(d); weeks[start] = (weeks[start] || 0) + value.quests; }
+    }
+    for (const [start, quests] of Object.entries(weeks)) {
+      if (quests >= 10 && !s.defeatedBosses[start]) s.defeatedBosses[start] = at;
+    }
+    const p = progress(s, today);
+    const reached = [s.totalXp > 0 || s.history.length > 0, s.totalXp >= 500, p.longest >= 3, p.longest >= 7, Object.keys(s.defeatedBosses).length > 0];
+    const added = [];
+    badges.forEach((b, i) => {
+      if (reached[i] && !s.achievements[b.id]) { s.achievements[b.id] = at; added.push(b.name); }
+    });
+    return added;
+  }
+
+  const isDone = (s, id, today = day()) => s.completed[id] === today || !!s.daily[today]?.questIds.includes(id);
+  function award(s, xp, stat, label, type, now) {
+    s.totalXp += xp;
+    s.stats[stat] += Math.max(1, Math.floor(xp / 20));
+    s.history.unshift({ label, xp, at: now.toISOString(), type });
+    s.history = s.history.slice(0, 100);
+    dailyRecord(s, day(now)).xp += xp;
+    return { xp, badges: unlock(s, now) };
+  }
+  function completeQuest(s, id, now = new Date()) {
+    const q = s.quests.find(q => q.id === id), today = day(now);
+    if (!q || isDone(s, id, today)) return null;
+    const d = dailyRecord(s, today);
+    d.quests++;
+    d.questIds.push(id);
+    s.completed[id] = today;
+    return award(s, q.xp, q.stat, q.name, 'quest', now);
+  }
+  function completeFocus(s, now = new Date()) {
+    if (s.focusEnd == null || s.focusEnd > now.getTime()) return null;
+    s.focusEnd = null;
+    dailyRecord(s, day(now)).focus++;
+    return award(s, 40, 'intellect', '集中ダンジョン', 'focus', now);
+  }
+  return { KEY, SCHEMA, names, badges, day, shiftDay, weekStart, fresh, valid, migrate, progress, unlock, isDone, completeQuest, completeFocus };
+});

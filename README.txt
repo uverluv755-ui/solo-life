@@ -1,12 +1,11 @@
-SOLO LIFE v0.2
+SOLO LIFE v0.3
 
 重要: iPhoneの「ファイル」アプリでindex.htmlを開くとJavaScriptや保存が制限されることがあります。
 
-公開方法（GitHub Pages）:
-1. GitHubにログインし、新しいPublicリポジトリ solo-life を作成。
-2. このZIPを解凍し、index.html / manifest.webmanifest / icon.svg / sw.js をリポジトリのルートにアップロード。
-3. Settings → Pages → Build and deployment → Deploy from a branch → main / (root) → Save。
-4. 発行された https://ユーザー名.github.io/solo-life/ をiPhoneのSafariで開く。
-5. 共有 → ホーム画面に追加。
+公開URL: https://uverluv755-ui.github.io/solo-life/
+Safariで開いて、共有 → ホーム画面に追加。
+更新はGitHubへのコミット後にGitHub Pagesへ反映されます。
+アプリ内に「最新版に更新」が表示されたら適用できます。
+保存データは引き継がれます。詳しい機能・保存互換性・テスト手順はREADME.mdを参照してください。
 
 注意: 公開リポジトリではソースコードが公開されます。個人情報やAPIキーは置かないでください。進捗は同じブラウザ内に保存されます。
