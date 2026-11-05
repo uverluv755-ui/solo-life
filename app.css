@@ -24,4 +24,3 @@ header{gap:8px;flex-wrap:wrap;font-size:11px}.tag{white-space:nowrap}
 .achievement .earned{color:#87d7bf}.subheading{margin-top:24px}.update-notice{border-color:#67b7ff}.update-notice p{margin-top:0;font-size:14px}
 button:disabled{cursor:default;opacity:.55}button,select,input{touch-action:manipulation}
 @media(prefers-reduced-motion:reduce){.fill{transition:none}}
-
