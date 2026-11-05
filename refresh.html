@@ -1,0 +1,8 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Cache-Control" content="no-store"><title>SOLO LIFE 更新修復</title><style>body{font:16px -apple-system,sans-serif;background:#091326;color:#edf6ff;padding:35px 20px;line-height:1.8}main{max-width:450px;margin:auto}button{padding:15px 22px;background:#86d6ff;border:0;border-radius:12px;font-size:17px;font-weight:bold}p{color:#bbd0e9}</style></head><body><main><h1>SOLO LIFE 更新修復</h1><p>古い画面のキャッシュだけを整理します。レベル・経験値・クエスト記録は削除しません。</p><p id="status">更新を準備しています…</p><button id="retry" hidden>もう一度試す</button></main><script>
+(async()=>{const status=document.getElementById('status'),retry=document.getElementById('retry');try{
+if('serviceWorker' in navigator){const regs=await navigator.serviceWorker.getRegistrations();await Promise.all(regs.filter(r=>r.scope===new URL('./',location.href).href).map(r=>r.unregister()));}
+if('caches' in window){const keys=await caches.keys();await Promise.all(keys.filter(k=>k.startsWith('solo-life-')).map(k=>caches.delete(k)));}
+status.textContent='キャッシュの整理が完了しました。最新版を開きます。';
+location.replace('./index.html?refresh='+Date.now());
+}catch(e){status.textContent='自動更新できませんでした。通信を確認して再試行してください。';retry.hidden=false;retry.onclick=()=>location.reload();}})();
+</script></body></html>
