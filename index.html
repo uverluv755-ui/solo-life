@@ -1,99 +1,311 @@
 <!doctype html>
 <html lang="ja">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#090f1d">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="SOLO LIFE">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="毎日の行動を経験値に。クエスト、連続達成、週間ボスで自分を育てる人生RPG。">
-  <title>SOLO LIFE | 人生覚醒RPG</title>
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="./icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="./icon-180.png">
-  <link rel="stylesheet" href="./app.css?v=0.3.1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090f1d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SOLO LIFE">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="毎日の行動を経験値に。6つの能力と独自のランクを育てる、あなたの人生RPG。">
+<title>SOLO LIFE | 日常から、覚醒へ。</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="stylesheet" href="./app.css?v=0.4.0">
 </head>
 <body>
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <main class="wrap">
-    <header><strong>SOLO LIFE // SYSTEM</strong><span class="tag">PROTOTYPE 0.3</span></header>
-    <h1>人生を攻略せよ。</h1>
-    <small>現実の行動が、あなたの力になる。</small>
-    <noscript><p class="warning">SafariでJavaScriptを有効にして開いてください。</p></noscript>
-    <p id="storageWarning" class="warning" role="alert" hidden></p>
-    <aside id="updateNotice" class="panel update-notice" aria-label="アプリの更新" hidden>
-      <p>新しいバージョンの準備ができました。進捗を保存して更新できます。</p>
-      <button class="primary" id="applyUpdate">最新版に更新</button>
-    </aside>
-    <section class="screen active" id="home" aria-label="ステータス">
-      <div class="panel">
-        <div class="level">
-          <div><div class="muted" style="font-size:12px">PLAYER STATUS</div><div class="big">LV <span id="level">1</span></div><div class="rank" id="rank">E RANK / 覚醒者</div></div>
-          <div style="font-size:55px;filter:drop-shadow(0 0 15px #367fe6)" aria-hidden="true">⚔️</div>
-        </div>
-        <div class="bar"><div class="fill" id="xpfill"></div></div>
-        <small id="xptext">0 / 100 XP</small><div class="stats" id="stats"></div>
-      </div>
-      <div class="panel"><h2>⚡ 本日のクエスト</h2><div id="quests"></div><small id="progress"></small></div>
-      <div class="panel">
-        <div class="streak-line"><div id="streak"></div><small id="bestStreak"></small></div>
-        <p class="note">1日1件以上のクエスト達成で継続。今日の達成前は、昨日までの連続日数を表示します。</p>
-        <h2 id="boss"></h2><small id="bossCount"></small>
-        <div class="bar" id="bossBar" role="progressbar" aria-label="週間ボス討伐の進捗" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"><div class="fill" id="bossFill"></div></div>
-        <p class="note" id="bossHint"></p>
-      </div>
-      <div class="panel">
-        <div class="section-head"><h2>📊 今週の進捗</h2><small id="weekRange"></small></div>
-        <div id="weekDays" class="week-days" aria-label="曜日ごとのクエスト達成数"></div>
-        <p id="weekSummary"></p>
-        <p class="note">月曜日に新しい週間ボスが登場。10件のクエストで討伐できます。集中ダンジョンは週間XPに加算されます。</p>
-      </div>
-    </section>
-    <section class="screen" id="missions" aria-label="クエスト">
-      <div class="panel">
-        <h2>📜 クエスト作成</h2>
-        <label for="qname">クエスト名</label><input id="qname" maxlength="40" placeholder="例：ウォーキング30分">
-        <label for="qstat">上昇する能力</label>
-        <select id="qstat"><option value="strength">筋力</option><option value="intellect">知力</option><option value="mind">精神力</option><option value="wealth">財力</option><option value="health">健康</option><option value="discipline">継続力</option></select>
-        <label for="qxp">獲得経験値</label><select id="qxp"><option value="20">20 XP（簡単）</option><option value="40" selected>40 XP（普通）</option><option value="80">80 XP（難しい）</option></select>
-        <button class="primary" id="add">クエストを追加</button>
-        <p class="note">クエストは毎日リセットされます。達成したクエストはその日一度だけ報酬を受け取れます。削除しても過去の進捗と称号は残ります。</p>
-      </div>
-      <div class="panel"><h2>登録クエスト</h2><div id="manage"></div></div>
-    </section>
-    <section class="screen" id="focus" aria-label="集中ダンジョン">
-      <div class="panel">
-        <h2>⏳ 集中ダンジョン</h2><p class="muted">集中時間をクリアして知力と経験値を獲得。</p>
-        <label for="minutes">挑戦時間</label><select id="minutes"><option value="1">1分（動作確認用）</option><option value="15">15分</option><option value="25" selected>25分</option><option value="45">45分</option></select>
-        <div class="timer" id="timer" role="timer">25:00</div>
-        <button class="primary" id="start">集中を開始</button><button class="secondary" id="resetTimer">中断する</button>
-        <p class="note">タイマー完了時に +40 XP。画面を閉じても経過時間を基準に判定しますが、通知はありません。</p>
-      </div>
-    </section>
-    <section class="screen" id="records" aria-label="冒険記録">
-      <div class="panel">
-        <h2>🏆 冒険記録</h2><p id="summary"></p><p id="bossRecord" class="note"></p>
-        <div class="section-head"><h2>🏅 獲得称号</h2><small id="badgeCount"></small></div>
-        <div id="achievements"></div><h2 class="subheading">最近の獲得履歴</h2><div id="history"></div>
-      </div>
-      <div class="panel">
-        <h2>💾 セーブデータ</h2>
-        <p class="note">この端末のブラウザ内に自動保存されます。ブラウザデータ削除や別端末への移動に備えてバックアップしてください。</p>
-        <button class="secondary" id="export">バックアップを書き出す</button>
-        <label for="import" style="display:block;margin-top:14px">バックアップを読み込む</label><input type="file" id="import" accept="application/json,.json">
-        <p class="note">以前のバージョンのバックアップも読み込めます。過去の進捗は保存されている履歴の範囲で復元されます。端末間の自動同期には対応していません。</p>
-        <button class="secondary" id="checkUpdate">更新を確認</button><p class="note" id="appVersion">SOLO LIFE v0.3 · build 0.3.1</p>
-      </div>
-    </section>
-  </main>
-  <nav class="tabs" aria-label="メニュー">
-    <button data-tab="home" class="active" aria-pressed="true">⚔️<br>ステータス</button>
-    <button data-tab="missions" aria-pressed="false">📜<br>クエスト</button>
-    <button data-tab="focus" aria-pressed="false">⏳<br>集中</button>
-    <button data-tab="records" aria-pressed="false">🏆<br>記録</button>
-  </nav>
-  <script src="./progress.js?v=0.3.1"></script>
-  <script src="./app.js?v=0.3.1"></script>
+<svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<defs>
+<symbol id="i-core" viewBox="0 0 24 24">
+<path d="m12 2 4 6 6 4-6 4-4 6-4-6-6-4 6-4Z"/>
+<path d="M12 8v8M8 12h8"/>
+</symbol>
+<symbol id="i-quest" viewBox="0 0 24 24">
+<rect x="5" y="4" width="14" height="17" rx="3"/>
+<path d="M9 4V2h6v2M9 10h6M9 15l2 2 4-4"/>
+</symbol>
+<symbol id="i-focus" viewBox="0 0 24 24">
+<circle cx="12" cy="13" r="8"/>
+<path d="M12 9v4l3 2M9 2h6M12 2v3"/>
+</symbol>
+<symbol id="i-record" viewBox="0 0 24 24">
+<path d="M4 3v17h17M8 15l4-5 4 2 5-7"/>
+</symbol>
+</defs>
+</svg>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true">
+</div>
+<main class="wrap">
+<header class="app-header">
+<a class="brand" href="#home" aria-label="SOLO LIFE ステータス">
+<svg class="icon">
+<use href="#i-core"/>
+</svg>SOLO LIFE<span class="version">v0.4</span>
+</a>
+<span class="system-state">
+<i>
+</i> SYSTEM READY</span>
+</header>
+<div class="page-intro">
+<p class="eyebrow" id="pageEyebrow">YOUR NEXT CHAPTER</p>
+<h1 id="pageTitle">日常から、覚醒へ。</h1>
+<p class="muted" id="pageDescription">今日の一歩が、まだ見ぬ自分をつくる。</p>
+</div>
+<noscript>
+<p class="warning">SafariでJavaScriptを有効にして開いてください。</p>
+</noscript>
+<p id="storageWarning" class="warning" role="alert" hidden>
+</p>
+<aside id="updateNotice" class="panel update-notice" aria-label="アプリの更新" hidden>
+<p>新しいバージョンの準備ができました。進捗を保存して更新できます。</p>
+<button class="primary" id="applyUpdate">最新版に更新</button>
+</aside>
+<section class="screen active" id="home" aria-label="ステータス">
+<div class="panel status-panel">
+<div class="section-head">
+<span class="eyebrow">PLAYER STATUS</span>
+<span class="status-chip">成長を記録中</span>
+</div>
+<div class="level">
+<div>
+<div class="level-caption">現在のレベル</div>
+<div class="big">
+<span class="lv-label">LV.</span>
+<span id="level">1</span>
+</div>
+<div class="rank" id="rank">I · 灯火</div>
+</div>
+<div class="growth-core" aria-hidden="true">
+<div class="orbit orbit-one">
+</div>
+<div class="orbit orbit-two">
+</div>
+<div class="core-light">
+</div>
+<svg>
+<use href="#i-core"/>
+</svg>
+<span>INNER LIGHT</span>
+</div>
+</div>
+<div class="xp-label">
+<span id="xptext">0 / 100 XP</span>
+<span id="nextLevel">次のレベルまで 100 XP</span>
+</div>
+<div class="bar" id="xpBar" role="progressbar" aria-label="次のレベルへの経験値" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+<div class="fill" id="xpfill">
+</div>
+</div>
+<div class="total-line">
+<span>積み重ねた経験値</span>
+<b id="totalXp">0 XP</b>
+</div>
+<details class="rank-details">
+<summary>
+<span id="rankNext">次のランクへ</span>
+<span class="detail-arrow" aria-hidden="true">＋</span>
+</summary>
+<p class="note" id="rankDescription">
+</p>
+<ol id="rankPath" class="rank-path" aria-label="ランクの進行">
+</ol>
+<p class="note">ランクはレベルに連動します。ランクが上がっても、経験値や能力値はそのまま積み重なります。</p>
+</details>
+</div>
+<div class="section-head abilities-heading">
+<h2>能力値</h2>
+<span class="eyebrow">6 ABILITIES</span>
+</div>
+<div class="stats" id="stats">
+</div>
+<div class="panel daily-panel">
+<div class="section-head">
+<h2>デイリークエスト</h2>
+<span class="counter" id="progress">
+</span>
+</div>
+<p class="section-note">小さな達成を、確かな力に。</p>
+<div id="quests">
+</div>
+<button class="text-button" id="createQuest">＋ クエストを作成</button>
+</div>
+<div class="panel">
+<div class="streak-line">
+<div id="streak">
+</div>
+<small id="bestStreak">
+</small>
+</div>
+<p class="note">1日1件の達成で継続。今日の達成前は、昨日までの連続日数を表示します。</p>
+<div class="weekly-challenge">
+<p class="eyebrow">WEEKLY CHALLENGE</p>
+<h2 id="boss">
+</h2>
+<small id="bossCount">
+</small>
+<div class="bar" id="bossBar" role="progressbar" aria-label="週間ボス討伐の進捗" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0">
+<div class="fill" id="bossFill">
+</div>
+</div>
+<p class="note" id="bossHint">
+</p>
+</div>
+</div>
+<div class="panel">
+<div class="section-head">
+<h2>今週の軌跡</h2>
+<small id="weekRange">
+</small>
+</div>
+<div id="weekDays" class="week-days" aria-label="曜日ごとのクエスト達成数">
+</div>
+<p id="weekSummary">
+</p>
+<p class="note">月曜日に新しい週間ボスが登場。10件達成で討伐。集中セッションは週間XPに加算されます。</p>
+</div>
+<p class="end-note">一歩ずつ。あなたのペースで。</p>
+</section>
+<section class="screen" id="missions" aria-label="クエスト">
+<div class="panel">
+<p class="eyebrow">CREATE A QUEST</p>
+<h2>次の一歩を決めよう。</h2>
+<label for="qname">クエスト名</label>
+<input id="qname" maxlength="40" placeholder="例：ウォーキング30分" enterkeyhint="done">
+<label for="qstat">育てる能力</label>
+<select id="qstat">
+<option value="strength">筋力</option>
+<option value="intellect">知力</option>
+<option value="mind">精神力</option>
+<option value="wealth">財力</option>
+<option value="health">健康</option>
+<option value="discipline">継続力</option>
+</select>
+<label for="qxp">獲得経験値</label>
+<select id="qxp">
+<option value="20">20 XP · 小さな挑戦</option>
+<option value="40" selected>40 XP · いつもの挑戦</option>
+<option value="80">80 XP · 大きな挑戦</option>
+</select>
+<button class="primary" id="add">＋ クエストを追加</button>
+<p class="note">達成状態は毎日リセット。報酬は1日1回、実際に取り組んでから受け取れます。クエストを削除しても過去の記録は残ります。</p>
+</div>
+<div class="panel">
+<h2>登録クエスト</h2>
+<div id="manage">
+</div>
+</div>
+</section>
+<section class="screen" id="focus" aria-label="集中タイマー">
+<div class="panel focus-panel">
+<p class="eyebrow">FOCUS SESSION</p>
+<h2>目の前のことに、深く。</h2>
+<p class="muted">集中した時間も、あなたの力になる。</p>
+<div class="timer-ring" id="timerRing">
+<div>
+<p class="eyebrow" id="timerState">READY TO FOCUS</p>
+<div class="timer" id="timer" role="timer" aria-label="残りの集中時間">25:00</div>
+<span class="note" id="timerHint">ひとつのことに、意識を向けよう。</span>
+</div>
+</div>
+<button class="primary" id="start">集中を開始</button>
+<button class="secondary" id="resetTimer" disabled>中断する</button>
+<div class="focus-settings">
+<div class="focus-reward">完了報酬 <b>＋40 XP</b>
+<span>知力 ＋2</span>
+</div>
+<label for="minutes">集中する時間</label>
+<select id="minutes">
+<option value="1">1分（お試し）</option>
+<option value="15">15分</option>
+<option value="25" selected>25分</option>
+<option value="45">45分</option>
+</select>
+</div>
+<p class="note">画面を閉じても経過時間は保持されます。完了報酬はアプリを開いたときに受け取れます。バックグラウンド通知や音はありません。</p>
+</div>
+</section>
+<section class="screen" id="records" aria-label="成長記録">
+<div class="panel">
+<p class="eyebrow">YOUR JOURNEY</p>
+<h2>積み重ねた、成長の証。</h2>
+<p id="summary">
+</p>
+<p id="bossRecord" class="note">
+</p>
+<div class="section-head subheading">
+<h2>獲得称号</h2>
+<small id="badgeCount">
+</small>
+</div>
+<div id="achievements">
+</div>
+<h2 class="subheading">最近の獲得履歴</h2>
+<div id="history">
+</div>
+</div>
+<div class="panel">
+<h2>セーブデータ</h2>
+<p class="note">この端末のブラウザに自動保存されます。ブラウザデータの削除や端末の変更に備え、バックアップを残せます。</p>
+<button class="secondary" id="export">バックアップを書き出す</button>
+<label for="import" class="import-label">バックアップを読み込む</label>
+<input type="file" id="import" accept="application/json,.json">
+<p class="note">旧バージョンのバックアップも読み込めます。過去の記録は保存されている範囲で復元します。端末間の自動同期には対応していません。</p>
+<button class="secondary" id="checkUpdate">更新を確認</button>
+<p class="note" id="appVersion">SOLO LIFE v0.4 · build 0.4.0</p>
+</div>
+</section>
+</main>
+<nav class="tabs" aria-label="メニュー">
+<button data-tab="home" class="active" aria-pressed="true" aria-controls="home">
+<svg class="icon" aria-hidden="true">
+<use href="#i-core"/>
+</svg>
+<span>ステータス</span>
+</button>
+<button data-tab="missions" aria-pressed="false" aria-controls="missions">
+<svg class="icon" aria-hidden="true">
+<use href="#i-quest"/>
+</svg>
+<span>クエスト</span>
+</button>
+<button data-tab="focus" aria-pressed="false" aria-controls="focus">
+<svg class="icon" aria-hidden="true">
+<use href="#i-focus"/>
+</svg>
+<span>集中</span>
+<i id="focusDot" hidden>
+</i>
+</button>
+<button data-tab="records" aria-pressed="false" aria-controls="records">
+<svg class="icon" aria-hidden="true">
+<use href="#i-record"/>
+</svg>
+<span>記録</span>
+</button>
+</nav>
+<dialog id="awakening" class="awakening" aria-labelledby="awakeningTitle" aria-describedby="awakeningText">
+<div class="awakening-content">
+<p class="eyebrow" id="awakeningKind">LEVEL UP</p>
+<div class="awakening-symbol" aria-hidden="true">
+<svg>
+<use href="#i-core"/>
+</svg>
+</div>
+<p class="level-transition" id="levelTransition">
+</p>
+<h2 id="awakeningTitle">新しい自分へ。</h2>
+<p id="awakeningText">
+</p>
+<div class="award-detail" id="awardDetail">
+</div>
+<button class="primary" id="continueGrowth" autofocus>次の一歩へ</button>
+<p class="note">成長は、あなたの中に。</p>
+</div>
+</dialog>
+<script src="./progress.js?v=0.4.0">
+</script>
+<script src="./app.js?v=0.4.0">
+</script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-SOLO LIFE v0.3
+SOLO LIFE v0.4
 
 重要: iPhoneの「ファイル」アプリでindex.htmlを開くとJavaScriptや保存が制限されることがあります。
 

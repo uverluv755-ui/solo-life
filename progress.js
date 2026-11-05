@@ -7,6 +7,22 @@
 
   const KEY = 'solo-life-v01';
   const SCHEMA = 3;
+  // v0.4 changes presentation, not the save schema or the 100 XP level curve.
+  const ranks = [
+    { level: 1, name: '灯火', mark: 'I', description: '小さな一歩が、光になる。' },
+    { level: 5, name: '脈動', mark: 'II', description: '積み重ねた行動が、力を帯びる。' },
+    { level: 15, name: '共鳴', mark: 'III', description: '日々の挑戦が、ひとつにつながる。' },
+    { level: 25, name: '飛躍', mark: 'IV', description: '昨日の限界を、新しい出発点へ。' },
+    { level: 35, name: '極光', mark: 'V', description: '続けてきた軌跡が、道を照らす。' },
+    { level: 50, name: '星冠', mark: 'VI', description: 'ここからも、成長は続いていく。' }
+  ];
+  function growth(totalXp) {
+    const level = Math.floor(totalXp / 100) + 1;
+    const index = ranks.reduce((found, r, i) => level >= r.level ? i : found, 0);
+    const rank = ranks[index], next = ranks[index + 1] || null;
+    return { level, xp: totalXp % 100, remaining: 100 - totalXp % 100, rank, next,
+      rankRemaining: next ? (next.level - 1) * 100 - totalXp : 0 };
+  }
   const names = { strength: '筋力', intellect: '知力', mind: '精神力', wealth: '財力', health: '健康', discipline: '継続力' };
   const defaults = [
     { id: 'training', name: '筋力トレーニング', stat: 'strength', xp: 80 },
@@ -140,12 +156,16 @@
 
   const isDone = (s, id, today = day()) => s.completed[id] === today || !!s.daily[today]?.questIds.includes(id);
   function award(s, xp, stat, label, type, now) {
+    const before = growth(s.totalXp);
+    const gain = Math.max(1, Math.floor(xp / 20));
     s.totalXp += xp;
-    s.stats[stat] += Math.max(1, Math.floor(xp / 20));
+    s.stats[stat] += gain;
     s.history.unshift({ label, xp, at: now.toISOString(), type });
     s.history = s.history.slice(0, 100);
     dailyRecord(s, day(now)).xp += xp;
-    return { xp, badges: unlock(s, now) };
+    const after = growth(s.totalXp);
+    return { xp, stat, gain, label, before, after, levelUp: after.level > before.level,
+      rankUp: after.rank.level > before.rank.level, badges: unlock(s, now) };
   }
   function completeQuest(s, id, now = new Date()) {
     const q = s.quests.find(q => q.id === id), today = day(now);
@@ -160,7 +180,7 @@
     if (s.focusEnd == null || s.focusEnd > now.getTime()) return null;
     s.focusEnd = null;
     dailyRecord(s, day(now)).focus++;
-    return award(s, 40, 'intellect', '集中ダンジョン', 'focus', now);
+    return award(s, 40, 'intellect', '集中セッション', 'focus', now);
   }
-  return { KEY, SCHEMA, names, badges, day, shiftDay, weekStart, fresh, valid, migrate, progress, unlock, isDone, completeQuest, completeFocus };
+  return { KEY, SCHEMA, names, badges, ranks, growth, day, shiftDay, weekStart, fresh, valid, migrate, progress, unlock, isDone, completeQuest, completeFocus };
 });

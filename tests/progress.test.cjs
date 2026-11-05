@@ -2,6 +2,56 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const C = require('../progress.js');
 const at = key => new Date(key + 'T12:00:00');
+
+test('v0.4 preserves the level-3 / 200 XP v0.3 save and every stored field', () => {
+  const s = C.fresh(), now = at('2026-11-05');
+  for (const q of s.quests) C.completeQuest(s, q.id, now);
+  s.focusMinutes = 15;
+  s.focusEnd = now.getTime() + 900000;
+  s.quests.push({ id: 'personal', name: '自分のクエスト', stat: 'health', xp: 20 });
+  const before = JSON.stringify(s), migrated = C.migrate(s, now);
+  assert.equal(C.KEY, 'solo-life-v01');
+  assert.equal(C.SCHEMA, 3);
+  assert.equal(migrated.totalXp, 200);
+  assert.equal(C.growth(migrated.totalXp).level, 3);
+  assert.deepEqual(migrated, s);
+  assert.equal(JSON.stringify(s), before);
+  assert.deepEqual(C.migrate(migrated, now), migrated);
+});
+
+test('six original ranks have exact boundaries and retain the original level curve', () => {
+  assert.deepEqual(C.ranks.map(r => r.name), ['灯火', '脈動', '共鳴', '飛躍', '極光', '星冠']);
+  for (let i = 1; i < C.ranks.length; i++) {
+    const r = C.ranks[i], threshold = (r.level - 1) * 100;
+    assert.equal(C.growth(threshold - 1).rank.name, C.ranks[i - 1].name);
+    assert.equal(C.growth(threshold - 1).rankRemaining, 1);
+    assert.equal(C.growth(threshold).rank.name, r.name);
+    assert.equal(C.growth(threshold).level, r.level);
+    assert.equal(C.growth(threshold).xp, 0);
+  }
+  assert.equal(C.growth(0).remaining, 100);
+  assert.equal(C.growth(99).remaining, 1);
+  assert.equal(C.growth(10000).level, 101);
+  assert.equal(C.growth(10000).next, null);
+});
+
+test('reward feedback reports level and rank transitions without extra rewards', () => {
+  const s = C.fresh(); s.totalXp = 360;
+  const r = C.completeQuest(s, 'reading', at('2026-11-05'));
+  assert.equal(r.levelUp, true); assert.equal(r.rankUp, true);
+  assert.equal(r.before.level, 4); assert.equal(r.after.level, 5);
+  assert.equal(r.after.rank.name, '脈動');
+  assert.equal(r.gain, 2); assert.equal(r.stat, 'intellect');
+  assert.equal(s.totalXp, 400); assert.equal(s.stats.intellect, 12);
+  assert.equal(C.completeQuest(s, 'reading', at('2026-11-05')), null);
+  const again = C.migrate(s, at('2026-11-05'));
+  assert.equal(again.totalXp, 400);
+  s.focusEnd = at('2026-11-05').getTime(); s.totalXp = 480;
+  const f = C.completeFocus(s, at('2026-11-05'));
+  assert.equal(f.levelUp, true); assert.equal(f.rankUp, false);
+  assert.equal(f.after.level, 6); assert.equal(s.totalXp, 520);
+  assert.equal(C.completeFocus(s, at('2026-11-05')), null);
+});
 function legacy() {
   const s = C.fresh();
   for (const key of ['schemaVersion', 'daily', 'achievements', 'defeatedBosses']) delete s[key];

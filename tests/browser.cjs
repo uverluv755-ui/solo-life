@@ -8,7 +8,8 @@ const C = require('../progress.js');
 const root = path.resolve(__dirname, '..');
 const output = process.env.TEST_OUTPUT || path.join(root, 'test-results');
 fs.mkdirSync(output, { recursive: true });
-let legacyMode = false, nextWorker = false, disconnect = false;
+let legacyMode = false, v03Mode = false, nextWorker = false, disconnect = false;
+const v03Files = Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name => [name, execFileSync('git', ['show', '92839fb:' + name], { cwd: root })]));
 const oldHtml = execFileSync('git', ['show', 'a200901:index.html'], { cwd: root });
 const oldWorker = execFileSync('git', ['show', 'a200901:sw.js'], { cwd: root });
 const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
@@ -17,13 +18,15 @@ const server = http.createServer((req, res) => {
   let name = new URL(req.url, 'http://localhost').pathname.replace(/^\/solo-life\//, '') || 'index.html';
   if (!/^[\w.-]+$/.test(name) || !fs.existsSync(path.join(root, name))) { res.writeHead(404); res.end(); return; }
   let data = fs.readFileSync(path.join(root, name));
+  if (v03Mode && v03Files[name]) data = v03Files[name];
   if (legacyMode && name === 'index.html') data = oldHtml;
   if (legacyMode && name === 'sw.js') data = oldWorker;
-  if (!legacyMode && nextWorker && name === 'sw.js') data = Buffer.from(data.toString().replace('solo-life-v03-20261105-1', 'solo-life-v03-test-update'));
+  if (!legacyMode && nextWorker && name === 'sw.js') data = Buffer.from(data.toString().replace('solo-life-v04-20261105-1', 'solo-life-v04-test-update'));
   res.writeHead(200, { 'Content-Type': mime[path.extname(name)] || 'application/octet-stream', 'Cache-Control': 'no-store' }); res.end(data);
 });
 const saveOf = page => page.evaluate(() => JSON.parse(localStorage.getItem('solo-life-v01')));
-const tab = (page, name) => page.locator(`[data-tab="${name}"]`).click();
+const dismiss = async page => { if (await page.locator('#awakening[open]').count()) await page.locator('#continueGrowth').click(); };
+const tab = async (page, name) => { await dismiss(page); await page.locator(`[data-tab="${name}"]`).click(); };
 const setTime = async (page, time) => {
   await page.clock.setSystemTime(new Date(time));
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
@@ -108,10 +111,10 @@ async function run(engine, url) {
     await page.waitForFunction(() => document.getElementById('badgeCount').textContent === '5 / 5 獲得');
     assert.equal(await page.locator('.achievement.unlocked').count(), 5);
     await page.clock.runFor(4100);
-    await page.screenshot({ path: path.join(output, engine + '-iphone-records.png'), fullPage: true, scale: 'css' });
+    await page.screenshot({ path: path.join(output, engine + '-iphone-records.png'), fullPage: true, scale: 'css', animations: 'disabled' });
     await tab(page, 'home');
     assert.match(await page.locator('#boss').innerText(), /討伐成功/);
-    await page.screenshot({ path: path.join(output, engine + '-iphone-home.png'), fullPage: true, scale: 'css' });
+    await page.screenshot({ path: path.join(output, engine + '-iphone-home.png'), fullPage: true, scale: 'css', animations: 'disabled' });
     for (const width of [320, 375, 390, 430]) {
       await page.setViewportSize({ width, height: 844 });
       for (const name of ['home', 'missions', 'focus', 'records']) {
@@ -139,7 +142,7 @@ async function run(engine, url) {
     assert.deepEqual(await saveOf(page), savedBeforeUpdate);
     const cachesAfter = await page.evaluate(() => caches.keys());
     assert.ok(cachesAfter.includes('unrelated-app'));
-    assert.ok(cachesAfter.includes('solo-life-v03-test-update'));
+    assert.ok(cachesAfter.includes('solo-life-v04-test-update'));
     assert.equal(cachesAfter.filter(k => k.startsWith('solo-life-')).length, 1);
     // WebKit's setOffline rejects SW navigations even for literal responses:
     // https://github.com/microsoft/playwright/issues/42775
@@ -156,6 +159,87 @@ async function run(engine, url) {
     await context.setOffline(false);
     console.log(engine + ': PWA update, scoped cache cleanup, offline navigation and saves passed');
     assert.deepEqual(errors, []);
+    await context.close();
+
+    // Exercise the actual deployed v0.3 HTML, JS and worker before upgrading.
+    nextWorker = false; v03Mode = true;
+    const upgradeContext = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Asia/Tokyo' });
+    const upgrade = await upgradeContext.newPage();
+    upgrade.on('pageerror', error => errors.push(error.message));
+    await upgrade.clock.install({ time: new Date('2026-11-05T12:00:00+09:00') });
+    await upgrade.goto(url);
+    // Finish installing the old worker before reloading its initial page.
+    await upgrade.evaluate(() => navigator.serviceWorker.ready.then(() => true));
+    await upgrade.waitForFunction(() => !!navigator.serviceWorker.controller);
+    const fixture = C.fresh();
+    for (const q of fixture.quests) C.completeQuest(fixture, q.id, new Date('2026-11-05T10:00:00+09:00'));
+    fixture.quests.push({ id: 'personal', name: '朝のストレッチ', stat: 'health', xp: 20 });
+    fixture.focusMinutes = 15;
+    fixture.focusEnd = new Date('2026-11-05T12:15:00+09:00').getTime();
+    await upgrade.evaluate(data => localStorage.setItem('solo-life-v01', JSON.stringify(data)), fixture);
+    await upgrade.reload();
+    await upgrade.waitForFunction(() => !!navigator.serviceWorker.controller);
+    assert.equal(await upgrade.locator('#level').innerText(), '3');
+    assert.deepEqual(await saveOf(upgrade), fixture);
+    v03Mode = false;
+    await upgrade.reload();
+    await upgrade.locator('#rankNext').waitFor();
+    assert.deepEqual(await saveOf(upgrade), fixture);
+    assert.equal(await upgrade.locator('#totalXp').innerText(), '200 XP');
+    assert.equal(await upgrade.locator('#level').innerText(), '3');
+    assert.equal(await upgrade.locator('#awakening[open]').count(), 0);
+    await upgrade.locator('#applyUpdate').waitFor({ state: 'visible' });
+    await upgrade.locator('#applyUpdate').click();
+    await upgrade.waitForFunction(() => document.getElementById('updateNotice').hidden);
+    assert.deepEqual(await saveOf(upgrade), fixture);
+    await upgrade.screenshot({ path: path.join(output, engine + '-v04-status.png'), fullPage: true, scale: 'css', animations: 'disabled' });
+    await tab(upgrade, 'focus');
+    assert.equal(await upgrade.locator('#minutes').inputValue(), '15');
+    assert.equal(await upgrade.locator('#start').isDisabled(), true);
+    await upgrade.screenshot({ path: path.join(output, engine + '-v04-focus.png'), fullPage: true, scale: 'css', animations: 'disabled' });
+    await upgrade.locator('#resetTimer').click();
+    await tab(upgrade, 'home');
+    await upgrade.getByRole('button', { name: '朝のストレッチを達成', exact: true }).click();
+    assert.equal((await saveOf(upgrade)).totalXp, 220);
+    assert.match(await upgrade.locator('#toast').innerText(), /健康 \+1/);
+    assert.equal(await upgrade.getByRole('button', { name: '朝のストレッチを達成', exact: true }).isDisabled(), true);
+    await setTime(upgrade, '2026-11-06T12:00:00+09:00');
+    await upgrade.getByRole('button', { name: '筋力トレーニングを達成', exact: true }).click();
+    await upgrade.locator('#awakening[open]').waitFor();
+    assert.equal(await upgrade.locator('#awakeningKind').innerText(), 'LEVEL UP');
+    assert.equal(await upgrade.locator('#levelTransition').innerText(), 'LV.3 → LV.4');
+    assert.equal((await saveOf(upgrade)).totalXp, 300);
+    await upgrade.screenshot({ path: path.join(output, engine + '-v04-level-up.png'), scale: 'css', animations: 'disabled' });
+    await upgrade.locator('#continueGrowth').click();
+    await upgrade.reload();
+    assert.equal(await upgrade.locator('#awakening[open]').count(), 0);
+    await tab(upgrade, 'records');
+    upgrade.on('dialog', dialog => dialog.accept());
+    const nearRank = await saveOf(upgrade); nearRank.totalXp = 380;
+    await upgrade.locator('#import').setInputFiles({ name: 'rank.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(nearRank)) });
+    await upgrade.waitForFunction(() => document.getElementById('toast').textContent === '復元しました');
+    await tab(upgrade, 'home');
+    await upgrade.getByRole('button', { name: '読書を20分を達成', exact: true }).click();
+    await upgrade.locator('#awakening[open]').waitFor();
+    assert.equal(await upgrade.locator('#awakeningKind').innerText(), 'RANK AWAKENING');
+    assert.match(await upgrade.locator('#awakeningTitle').innerText(), /脈動/);
+    assert.equal((await saveOf(upgrade)).totalXp, 420);
+    assert.equal(await upgrade.locator('#continueGrowth').evaluate(e => e === document.activeElement), true);
+    await upgrade.screenshot({ path: path.join(output, engine + '-v04-rank-up.png'), scale: 'css', animations: 'disabled' });
+    await upgrade.setViewportSize({ width: 320, height: 568 });
+    const box = await upgrade.locator('#awakening').boundingBox();
+    assert.ok(box.x >= 0 && box.x + box.width <= 320 && box.height <= 568);
+    await upgrade.emulateMedia({ reducedMotion: 'reduce' });
+    assert.equal(await upgrade.locator('#awakening').evaluate(e => getComputedStyle(e).animationName), 'none');
+    await upgrade.keyboard.press('Escape');
+    assert.equal(await upgrade.locator('#awakening[open]').count(), 0);
+    await upgrade.locator('.rank-details summary').click();
+    assert.equal(await upgrade.locator('#rankPath li').count(), 6);
+    assert.match(await upgrade.locator('#rankPath [aria-current="step"]').innerText(), /脈動/);
+    assert.equal(await upgrade.evaluate(() => document.documentElement.scrollWidth <= innerWidth), true);
+    await upgradeContext.close();
+    assert.deepEqual(errors, []);
+    console.log(engine + ': actual v0.3 worker upgrade preserves 200 XP, LV3, custom quests, full history, stats and active timer; level/rank dialogs, no replay and reduced motion passed');
 
     const corruptContext = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'block' });
     await corruptContext.addInitScript(() => localStorage.setItem('solo-life-v01', '{broken-save'));

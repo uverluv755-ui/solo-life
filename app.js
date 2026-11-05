@@ -32,11 +32,9 @@
       return false;
     }
   }
-  const level = () => Math.floor(s.totalXp / 100) + 1;
-  function rank() {
-    const l = level();
-    return l >= 50 ? 'S' : l >= 35 ? 'A' : l >= 25 ? 'B' : l >= 15 ? 'C' : l >= 5 ? 'D' : 'E';
-  }
+  const statCodes = { strength: 'STR', intellect: 'INT', mind: 'MND', wealth: 'WLT', health: 'VIT', discipline: 'DSC' };
+  const celebrations = [];
+  let focusCompleted = false;
   function toast(text) {
     $('toast').textContent = text;
     $('toast').style.display = 'block';
@@ -49,45 +47,83 @@
     if (text !== undefined) node.textContent = text;
     return node;
   }
-  function afterAward(result, before, focus = false) {
+  function showCelebration() {
+    if ($('awakening').open || !celebrations.length) return;
+    const result = celebrations.shift();
+    $('awakening').classList.toggle('rank-up', result.rankUp);
+    $('awakeningKind').textContent = result.rankUp ? 'RANK AWAKENING' : 'LEVEL UP';
+    $('levelTransition').textContent = `LV.${result.before.level} → LV.${result.after.level}`;
+    $('awakeningTitle').textContent = result.rankUp ? `「${result.after.rank.name}」へ、覚醒。` : '新しい自分へ。';
+    $('awakeningText').textContent = result.rankUp ? result.after.rank.description : '積み重ねた一歩が、新しい力になりました。';
+    $('awardDetail').textContent = `+${result.xp} XP  ·  ${C.names[result.stat]} +${result.gain}` +
+      (result.badges.length ? `\n称号「${result.badges.join('」「')}」を獲得` : '');
+    $('toast').style.display = 'none';
+    if (typeof $('awakening').showModal === 'function') $('awakening').showModal();
+    else toast(`${$('awakeningTitle').textContent} LV.${result.after.level} / +${result.xp} XP`);
+  }
+  $('continueGrowth').onclick = () => $('awakening').close();
+  $('awakening').addEventListener('close', () => {
+    if (celebrations.length) showCelebration();
+    else document.querySelector('.tabs button.active').focus({ preventScroll: true });
+  });
+  function afterAward(result, focus = false) {
     if (!result) return;
     save(); render();
-    let text = level() > before ? `LEVEL UP! LV ${level()} に到達！` : `${focus ? '集中ダンジョンクリア' : 'クエスト達成'}！ +${result.xp} XP`;
-    if (result.badges.length) text += ` ／ 称号「${result.badges.join('」「')}」獲得`;
-    toast(text);
+    document.querySelector(`[data-stat="${result.stat}"]`)?.classList.add('gained');
+    if (result.levelUp) { celebrations.push(result); showCelebration(); }
+    else {
+      let text = `${focus ? '集中セッション完了' : 'クエスト達成'} · +${result.xp} XP\n${result.label} / ${C.names[result.stat]} +${result.gain}`;
+      if (result.badges.length) text += `\n称号「${result.badges.join('」「')}」を獲得`;
+      toast(text);
+    }
   }
   function render() {
-    const today = C.day(), l = level(), p = s.totalXp % 100;
+    const today = C.day(), g = C.growth(s.totalXp), l = g.level, p = g.xp;
     lastDay = today;
     $('level').textContent = l;
-    $('rank').textContent = rank() + ' RANK / 覚醒者';
+    $('rank').textContent = `${g.rank.mark} · ${g.rank.name}`;
     $('xpfill').style.width = p + '%';
     $('xptext').textContent = p + ' / 100 XP';
+    $('xpBar').setAttribute('aria-valuenow', p);
+    $('xpBar').setAttribute('aria-valuetext', `次のレベルまで ${g.remaining} XP`);
+    $('nextLevel').textContent = `次のレベルまで ${g.remaining} XP`;
+    $('totalXp').textContent = s.totalXp.toLocaleString('ja-JP') + ' XP';
+    $('rankNext').textContent = g.next ? `次は「${g.next.name}」 · LV.${g.next.level} / あと${g.rankRemaining} XP` : '最終ランク「星冠」 · 成長は続く';
+    $('rankDescription').textContent = g.rank.description;
+    $('rankPath').replaceChildren(...C.ranks.map(r => {
+      const current = r.level === g.rank.level;
+      const node = el('li', current ? 'current' : l >= r.level ? 'reached' : '');
+      if (current) node.setAttribute('aria-current', 'step');
+      node.append(el('b', '', r.mark), el('span', '', r.name), el('small', '', `LV.${r.level}${current ? ' · 現在' : ''}`));
+      return node;
+    }));
     $('stats').replaceChildren(...Object.entries(C.names).map(([key, name]) => {
       const node = el('div', 'stat');
-      node.append(el('span', '', name), el('b', '', s.stats[key]));
+      node.dataset.stat = key;
+      node.append(el('span', 'stat-code', statCodes[key]), el('span', 'stat-name', name), el('b', '', s.stats[key]));
       return node;
     }));
     let completed = 0;
     $('quests').replaceChildren(...s.quests.map(q => {
       const done = C.isDone(s, q.id, today);
       if (done) completed++;
-      const row = el('div', 'quest'), button = el('button', '', done ? '✓' : '○');
-      button.disabled = done;
+      const row = el('div', 'quest' + (done ? ' completed' : '')), button = el('button', '', done ? '✓' : '+');
+      button.disabled = done || saveLocked;
       button.setAttribute('aria-label', q.name + 'を達成');
       button.onclick = () => {
-        const before = level();
-        afterAward(C.completeQuest(s, q.id), before);
+        afterAward(C.completeQuest(s, q.id));
       };
-      row.append(button, el('div', 'name' + (done ? ' done' : ''), q.name), el('div', 'xp', '+' + q.xp + ' XP'));
+      const name = el('div', 'name' + (done ? ' done' : ''), q.name);
+      name.append(el('small', '', done ? '達成済み · また明日' : `${C.names[q.stat]} +${Math.max(1, Math.floor(q.xp / 20))}`));
+      row.append(button, name, el('div', 'xp', done ? '受取済み' : '+' + q.xp + ' XP'));
       return row;
     }));
     if (!s.quests.length) $('quests').append(el('p', 'note', '「クエスト」から新しい挑戦を追加しましょう。'));
-    $('progress').textContent = `本日の達成 ${completed} / ${s.quests.length}`;
+    $('progress').textContent = `${completed} / ${s.quests.length} 達成`;
     const pv = C.progress(s, today), defeated = !!s.defeatedBosses[pv.start];
-    $('streak').textContent = `🔥 連続達成 ${pv.streak}日`;
+    $('streak').textContent = `連続達成 ${pv.streak}日`;
     $('bestStreak').textContent = `最長 ${pv.longest}日`;
-    $('boss').textContent = defeated ? '🏆 継続の番人 — 討伐成功！' : '👾 週間ボス「継続の番人」';
+    $('boss').textContent = defeated ? '継続の番人 · 討伐成功！' : '週間ボス「継続の番人」';
     $('bossCount').textContent = `${pv.weekly} / 10 クエスト達成`;
     $('bossHint').textContent = defeated ? '今週の討伐を記録しました。次の挑戦は月曜日！' : `討伐まであと${Math.max(0, 10 - pv.weekly)}件`;
     $('bossFill').style.width = Math.min(100, pv.weekly * 10) + '%';
@@ -109,7 +145,7 @@
     }));
     $('achievements').replaceChildren(...C.badges.map(b => {
       const unlocked = !!s.achievements[b.id], node = el('div', 'achievement' + (unlocked ? ' unlocked' : ''));
-      node.append(el('div', 'badge-name', (unlocked ? '🏅 ' : '🔒 ') + b.name), el('small', '', b.description));
+      node.append(el('div', 'badge-name', (unlocked ? '◇ ' : '○ ') + b.name), el('small', '', b.description));
       if (unlocked) node.append(el('small', 'earned', '獲得済み'));
       return node;
     }));
@@ -117,15 +153,28 @@
     $('manage').replaceChildren(...s.quests.map(q => {
       const row = el('div', 'quest'), button = el('button', '', '×');
       button.setAttribute('aria-label', q.name + 'を削除');
+      button.disabled = saveLocked;
       button.onclick = () => { s.quests = s.quests.filter(v => v.id !== q.id); save(); render(); };
       row.append(el('div', 'name', q.name + ' / ' + C.names[q.stat] + ' / ' + q.xp + ' XP'), button);
       return row;
     }));
-    $('summary').textContent = `総獲得経験値 ${s.totalXp} XP / 現在レベル ${l} / ${rank()}ランク`;
+    if (!s.quests.length) $('manage').append(el('p', 'note', 'まだクエストがありません。最初の一歩を追加しましょう。'));
+    $('add').disabled = saveLocked;
+    $('summary').textContent = `総獲得経験値 ${s.totalXp} XP / 現在レベル ${l} / ランク「${g.rank.name}」`;
     $('bossRecord').textContent = `週間ボス討伐 ${Object.keys(s.defeatedBosses).length}回`;
-    $('history').replaceChildren(...(s.history.length ? s.history.slice(0, 20).map(h => el('div', 'history',
-      `${new Date(h.at).toLocaleString('ja-JP')}　${h.label}　+${h.xp} XP`)) : [el('p', 'muted', 'まだ記録がありません。')]));
+    $('history').replaceChildren(...(s.history.length ? s.history.slice(0, 20).map(h => {
+      const row = el('div', 'history'), info = el('div'), time = el('time', '', new Date(h.at).toLocaleString('ja-JP'));
+      time.dateTime = h.at;
+      info.append(time, el('span', '', h.label));
+      row.append(info, el('b', '', `+${h.xp} XP`)); return row;
+    }) : [el('p', 'muted', 'まだ記録がありません。最初の達成をここに。')]));
   }
+  const pages = {
+    home: ['YOUR NEXT CHAPTER', '日常から、覚醒へ。', '今日の一歩が、まだ見ぬ自分をつくる。'],
+    missions: ['DAILY QUESTS', '挑戦を、日常に。', '自分で選んだ行動が、成長のきっかけになる。'],
+    focus: ['MAKE TIME COUNT', '集中する時間。', 'ひとつのことに向き合う、小さな旅。'],
+    records: ['GROWTH RECORD', '歩んだ道が、力になる。', '昨日までの挑戦は、ここに残っている。']
+  };
   document.querySelectorAll('[data-tab]').forEach(button => {
     button.onclick = () => {
       document.querySelectorAll('[data-tab]').forEach(other => {
@@ -133,9 +182,12 @@
         other.setAttribute('aria-pressed', String(other === button));
       });
       document.querySelectorAll('.screen').forEach(screen => screen.classList.toggle('active', screen.id === button.dataset.tab));
+      ['pageEyebrow', 'pageTitle', 'pageDescription'].forEach((id, i) => { $(id).textContent = pages[button.dataset.tab][i]; });
       render(); window.scrollTo(0, 0);
     };
   });
+  $('createQuest').onclick = () => { document.querySelector('[data-tab="missions"]').click(); $('qname').focus(); };
+  document.querySelector('.brand').onclick = event => { event.preventDefault(); document.querySelector('[data-tab="home"]').click(); };
   $('add').onclick = () => {
     const name = $('qname').value.trim();
     if (!name) return toast('クエスト名を入力してください');
@@ -146,21 +198,30 @@
   $('minutes').value = String(s.focusMinutes);
   function updateTimer() {
     if (lastDay !== C.day()) { C.unlock(s); save(); render(); }
-    const before = level(), result = C.completeFocus(s);
-    if (result) afterAward(result, before, true);
-    const remain = s.focusEnd != null ? Math.max(0, Math.ceil((s.focusEnd - Date.now()) / 1000)) : Number($('minutes').value) * 60;
+    const result = C.completeFocus(s);
+    if (result) { focusCompleted = true; afterAward(result, true); }
+    const running = s.focusEnd != null;
+    const remain = running ? Math.max(0, Math.ceil((s.focusEnd - Date.now()) / 1000)) : focusCompleted ? 0 : Number($('minutes').value) * 60;
     $('timer').textContent = String(Math.floor(remain / 60)).padStart(2, '0') + ':' + String(remain % 60).padStart(2, '0');
-    $('start').disabled = s.focusEnd != null;
-    $('minutes').disabled = s.focusEnd != null;
+    $('start').disabled = running || saveLocked;
+    $('start').textContent = running ? '集中しています…' : focusCompleted ? 'もう一度、集中する' : '集中を開始';
+    $('minutes').disabled = running || saveLocked;
+    $('resetTimer').disabled = !running || saveLocked;
+    $('timerState').textContent = running ? 'FOCUS IN PROGRESS' : focusCompleted ? 'SESSION COMPLETE' : 'READY TO FOCUS';
+    $('timerHint').textContent = running ? 'この時間が、あなたの力になる。' : focusCompleted ? 'おつかれさま。積み重ねを記録しました。' : 'ひとつのことに、意識を向けよう。';
+    $('timerRing').style.setProperty('--elapsed', (running ? Math.min(100, Math.max(0, (1 - remain / (s.focusMinutes * 60)) * 100)) : focusCompleted ? 100 : 0) + '%');
+    document.querySelector('.focus-panel').classList.toggle('running', running);
+    $('focusDot').hidden = !running;
   }
-  $('minutes').onchange = () => { s.focusMinutes = Number($('minutes').value); save(); updateTimer(); };
+  $('minutes').onchange = () => { focusCompleted = false; s.focusMinutes = Number($('minutes').value); save(); updateTimer(); };
   $('start').onclick = () => {
     if (s.focusEnd != null) return;
+    focusCompleted = false;
     s.focusMinutes = Number($('minutes').value);
     s.focusEnd = Date.now() + s.focusMinutes * 60000;
     save(); updateTimer();
   };
-  $('resetTimer').onclick = () => { s.focusEnd = null; save(); updateTimer(); toast('集中を中断しました'); };
+  $('resetTimer').onclick = () => { focusCompleted = false; s.focusEnd = null; save(); updateTimer(); toast('集中を中断しました。ここまでの経験値は変わりません。'); };
   $('export').onclick = () => {
     const data = saveLocked && raw ? raw : JSON.stringify(s, null, 2);
     const url = URL.createObjectURL(new Blob([data], { type: 'application/json' })), link = document.createElement('a');
@@ -175,7 +236,7 @@
       if (!confirm('現在のセーブデータをバックアップの内容で置き換えますか？')) return;
       // Persist the replacement before changing the working state.
       localStorage.setItem(C.KEY, JSON.stringify(restored));
-      s = restored; saveLocked = false; raw = null; showWarning('');
+      s = restored; saveLocked = false; raw = null; focusCompleted = false; showWarning('');
       $('minutes').value = String(s.focusMinutes);
       render(); updateTimer(); toast('復元しました');
     } catch { toast('バックアップを読み込めませんでした。形式と保存容量を確認してください。'); }
