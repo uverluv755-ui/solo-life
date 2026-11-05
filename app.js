@@ -188,6 +188,22 @@
   });
   $('createQuest').onclick = () => { document.querySelector('[data-tab="missions"]').click(); $('qname').focus(); };
   document.querySelector('.brand').onclick = event => { event.preventDefault(); document.querySelector('[data-tab="home"]').click(); };
+  // Presets only fill the form; they never alter saved progress or grant XP.
+  const goalPresets = {
+    'fitness-workout': ['筋力トレーニング', 'strength', '80'],
+    'fitness-walk': ['ウォーキング30分', 'health', '40'],
+    'study-read': ['読書20分', 'intellect', '40'],
+    'study-focus': ['勉強45分', 'intellect', '80'],
+    'work-deep': ['集中作業45分', 'discipline', '80'],
+    'work-plan': ['今日の重要タスクを完了', 'wealth', '40'],
+    'health-stretch': ['ストレッチ10分', 'health', '20'],
+    'health-care': ['セルフケア15分', 'mind', '20']
+  };
+  $('goalPreset').onchange = () => {
+    const preset = goalPresets[$('goalPreset').value];
+    if (!preset) return;
+    [$('qname').value, $('qstat').value, $('qxp').value] = preset;
+  };
   $('add').onclick = () => {
     const name = $('qname').value.trim();
     if (!name) return toast('クエスト名を入力してください');
