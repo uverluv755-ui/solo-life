@@ -12,7 +12,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="stylesheet" href="./app.css?v=0.4.0">
+<link rel="stylesheet" href="./app.css?v=0.5.0">
 </head>
 <body>
 <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -41,7 +41,7 @@
 <a class="brand" href="#home" aria-label="SOLO LIFE ステータス">
 <svg class="icon">
 <use href="#i-core"/>
-</svg>SOLO LIFE<span class="version">v0.4</span>
+</svg>SOLO LIFE<span class="version">v0.5</span>
 </a>
 <span class="system-state">
 <i>
@@ -170,6 +170,15 @@
 <div class="panel">
 <p class="eyebrow">CREATE A QUEST</p>
 <h2>次の一歩を決めよう。</h2>
+<label for="goalPreset">目標からクエストを選ぶ</label>
+<select id="goalPreset" aria-label="目標別クエスト">
+<option value="">自由に作成する</option>
+<optgroup label="筋トレ・ボディメイク"><option value="fitness-workout">筋力トレーニング</option><option value="fitness-walk">ウォーキング30分</option></optgroup>
+<optgroup label="勉強・資格"><option value="study-read">読書20分</option><option value="study-focus">勉強45分</option></optgroup>
+<optgroup label="仕事・ビジネス"><option value="work-deep">集中作業45分</option><option value="work-plan">今日の重要タスクを完了</option></optgroup>
+<optgroup label="美容・健康"><option value="health-stretch">ストレッチ10分</option><option value="health-care">セルフケア15分</option></optgroup>
+</select>
+<p class="note">選ぶと下の入力欄に候補が入ります。内容を編集してから追加できます。選択だけでは経験値は増えません。</p>
 <label for="qname">クエスト名</label>
 <input id="qname" maxlength="40" placeholder="例：ウォーキング30分" enterkeyhint="done">
 <label for="qstat">育てる能力</label>
@@ -252,7 +261,7 @@
 <input type="file" id="import" accept="application/json,.json">
 <p class="note">旧バージョンのバックアップも読み込めます。過去の記録は保存されている範囲で復元します。端末間の自動同期には対応していません。</p>
 <button class="secondary" id="checkUpdate">更新を確認</button>
-<p class="note" id="appVersion">SOLO LIFE v0.4 · build 0.4.0</p>
+<p class="note" id="appVersion">SOLO LIFE v0.5 · build 0.5.0</p>
 </div>
 </section>
 </main>
@@ -303,9 +312,9 @@
 <p class="note">成長は、あなたの中に。</p>
 </div>
 </dialog>
-<script src="./progress.js?v=0.4.0">
+<script src="./progress.js?v=0.5.0">
 </script>
-<script src="./app.js?v=0.4.0">
+<script src="./app.js?v=0.5.0">
 </script>
 </body>
 </html>
