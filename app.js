@@ -208,8 +208,15 @@
     const name = $('qname').value.trim();
     if (!name) return toast('クエスト名を入力してください');
     if (s.quests.length >= 30) return toast('クエストは最大30件です');
-    s.quests.push({ id: 'q' + Date.now() + Math.random().toString(36).slice(2, 7), name, stat: $('qstat').value, xp: Number($('qxp').value) });
-    $('qname').value = ''; save(); render(); toast('クエストを追加しました');
+    if (s.quests.some(q => q.name.trim().toLocaleLowerCase('ja-JP') === name.toLocaleLowerCase('ja-JP'))) {
+      return toast('同じ名前のクエストは登録済みです。既存のクエストをご利用ください');
+    }
+    const previousQuests = s.quests;
+    s.quests = [...s.quests, { id: 'q' + Date.now() + Math.random().toString(36).slice(2, 7), name, stat: $('qstat').value, xp: Number($('qxp').value) }];
+    if (!save()) { s.quests = previousQuests; return; }
+    $('qname').value = '';
+    $('goalPreset').value = '';
+    render(); toast('クエストを追加しました。達成後に経験値を受け取れます');
   };
   $('minutes').value = String(s.focusMinutes);
   function updateTimer() {
