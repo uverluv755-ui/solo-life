@@ -201,3 +201,43 @@ to{box-shadow:0 0 50px #7bd3ce22;transform:scale(1)}
 .focus-settings label{display:inline-block;width:40%;font-size:11px;vertical-align:middle}
 .focus-settings select{display:inline-block;width:58%;min-height:44px;font-size:16px}
 .focus-panel #start{margin-top:10px}
+
+/* SOLO LIFE — Astral Interface: original premium fantasy RPG styling */
+:root{--accent:#82d7ff;--muted:#a3b5d1;--line:#344a72}
+body{background:radial-gradient(ellipse at 50% -8%,#283b76 0%,#111b36 28%,transparent 56%),radial-gradient(ellipse at 100% 48%,#183a5655,transparent 55%),#070b19;background-attachment:fixed}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.28;background-image:linear-gradient(120deg,transparent 47%,#8fb7ff13 49%,transparent 51%),repeating-linear-gradient(0deg,transparent 0 75px,#95a8df0b 76px 77px);mask-image:linear-gradient(#000,transparent 85%)}
+.wrap,.tabs{position:relative}
+.page-intro{position:relative;padding:17px 0 14px}
+.page-intro:before{content:"";position:absolute;left:0;top:0;width:76px;height:2px;background:linear-gradient(90deg,#b9eaff,transparent);box-shadow:0 0 20px #76bcff}
+.page-intro h1{font-weight:800;letter-spacing:2px;text-shadow:0 2px 26px #67b8ff66}
+.eyebrow{color:#8eb9e7;font-weight:750}
+.panel{position:relative;isolation:isolate;background:linear-gradient(148deg,#1a2948 0%,#111b34 48%,#0d1428 100%);border:1px solid #405a87;border-radius:17px;box-shadow:0 15px 40px #0007,inset 0 1px 0 #c3e9ff20,0 0 22px #4589f00c}
+.panel:before{content:"";position:absolute;pointer-events:none;top:8px;left:8px;width:21px;height:21px;border-top:1px solid #93c9ff77;border-left:1px solid #93c9ff77;clip-path:polygon(0 0,100% 0,100% 12%,12% 12%,12% 100%,0 100%)}
+.panel:after{content:"";position:absolute;pointer-events:none;right:8px;bottom:8px;width:21px;height:21px;border-right:1px solid #93c9ff55;border-bottom:1px solid #93c9ff55}
+.status-panel{background:radial-gradient(circle at 78% 29%,#4973c43d,transparent 40%),linear-gradient(140deg,#1e3157,#111b34 70%);border-color:#6a8ed0;box-shadow:0 20px 52px #0008,0 0 34px #3675dc26,inset 0 1px 0 #c6e7ff42}
+.big{color:#f6faff;font-weight:800;text-shadow:0 0 27px #81bbff88}
+.rank{color:#a8d9ff;font-weight:750;text-shadow:0 0 16px #5bb7ff66}
+.growth-core{color:#9bdfff;filter:drop-shadow(0 0 15px #6caeff55)}
+.growth-core svg{filter:drop-shadow(0 0 18px #7ecbff)}
+.orbit{border-color:#89bdff70}
+.orbit-two{border-color:#8ab7ff44}
+.core-light{background:radial-gradient(circle,#79c9ff66,transparent 70%)}
+.bar{box-shadow:inset 0 1px 3px #0009}
+.fill{background:linear-gradient(90deg,#3e73dc,#7ce6ff,#c1f4ff)!important;box-shadow:0 0 14px #72c8ff66}
+.stats .stat,.stat{background:linear-gradient(155deg,#20365a,#15233f);border:1px solid #3e5c8a;box-shadow:inset 0 1px 0 #b8dcff14}
+.stat b{color:#f5faff;text-shadow:0 0 18px #8ac8ff44}
+.primary{background:linear-gradient(105deg,#3778e4,#48b4e8 55%,#8fe4f0)!important;color:#06172d!important;border-color:#83d8ff!important;font-weight:800;box-shadow:0 8px 23px #2e8dec44,inset 0 1px 0 #ffffff70}
+.primary:active{transform:scale(.99)}
+.quest{border-color:#354c71}
+.quest .xp{color:#9bdeff;font-weight:750}
+.status-chip,.counter{border-color:#5687c1;color:#a9ddff}
+.tabs{background:linear-gradient(180deg,#101b33f5,#0a1226f9);border-top:1px solid #466391;box-shadow:0 -10px 32px #02050f99}
+.tabs button.active{color:#a9eaff;text-shadow:0 0 15px #61bcff66}
+input,select{background:#0c172d!important;border-color:#49658e!important;color:#eef7ff}
+.awakening{background:radial-gradient(circle at 50% 22%,#2e5686,#0c142c 65%);border:1px solid #8cc7ff;box-shadow:0 0 0 100vmax #020713d9,0 0 70px #6ea6ff70,inset 0 0 50px #4c84dc33}
+.awakening-symbol{border-color:#94d9ff;box-shadow:0 0 60px #69b6ff55,inset 0 0 30px #69b6ff2b}
+.awakening-symbol svg{color:#d6f4ff;filter:drop-shadow(0 0 18px #80caff)}
+@media(prefers-reduced-motion:no-preference){.status-panel{animation:astral-enter .6s ease-out both}.growth-core{animation:astral-glow 4s ease-in-out infinite}.panel:not(.status-panel){animation:astral-enter .45s ease-out both}}
+@keyframes astral-enter{from{opacity:.75;transform:translateY(9px)}to{opacity:1;transform:none}}
+@keyframes astral-glow{50%{filter:drop-shadow(0 0 24px #8ccaff88)}}
+@media(max-width:360px){.panel{border-radius:15px}.page-intro h1{letter-spacing:1px}}
