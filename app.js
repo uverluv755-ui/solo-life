@@ -192,21 +192,47 @@
   });
   $('createQuest').onclick = () => { document.querySelector('[data-tab="missions"]').click(); $('qname').focus(); };
   document.querySelector('.brand').onclick = event => { event.preventDefault(); document.querySelector('[data-tab="home"]').click(); };
-  // Presets only fill the form; they never alter saved progress or grant XP.
-  const goalPresets = {
-    'fitness-workout': ['筋力トレーニング', 'strength', '80'],
-    'fitness-walk': ['ウォーキング30分', 'health', '40'],
-    'study-read': ['読書20分', 'intellect', '40'],
-    'study-focus': ['勉強45分', 'intellect', '80'],
-    'work-deep': ['集中作業45分', 'discipline', '80'],
-    'work-plan': ['今日の重要タスクを完了', 'wealth', '40'],
-    'health-stretch': ['ストレッチ10分', 'health', '20'],
-    'health-care': ['セルフケア15分', 'mind', '20']
+  const presetSelect = $('goalPreset');
+  // A v0.7 worker can still serve its earlier HTML during a network update.
+  const choices = $('goalChoices');
+  if (choices) {
+    const firstQuest = $('firstQuest');
+    firstQuest.hidden = raw !== null || !!warning;
+    firstQuest.onclick = () => {
+      document.querySelector('[data-tab="missions"]').click();
+      choices.firstElementChild.focus();
+    };
+    document.querySelector('[data-tab="missions"]').addEventListener('click', () => { firstQuest.hidden = true; });
+    const prompt = presetSelect.options[0];
+    const groups = [...presetSelect.querySelectorAll('optgroup')];
+    for (const group of [null, ...groups]) {
+      const button = el('button', '', group?.label ?? 'すべて');
+      button.type = 'button';
+      button.setAttribute('aria-pressed', String(!group));
+      button.setAttribute('aria-controls', 'goalPreset');
+      button.onclick = () => {
+        presetSelect.replaceChildren(prompt, ...(group ? [group] : groups));
+        presetSelect.value = '';
+        for (const choice of choices.children) {
+          choice.setAttribute('aria-pressed', String(choice === button));
+        }
+      };
+      choices.append(button);
+    }
+  }
+  const presetRewards = {
+    'fitness-squat': ['strength', 20], 'fitness-workout': ['strength', 80], 'fitness-walk': ['health', 40],
+    'study-review': ['intellect', 20], 'study-read': ['intellect', 40], 'study-focus': ['intellect', 80],
+    'work-next': ['discipline', 20], 'work-deep': ['discipline', 80], 'work-plan': ['wealth', 40],
+    'beauty-skin': ['discipline', 20], 'health-care': ['mind', 20],
+    'health-break': ['health', 20], 'health-stretch': ['health', 20]
   };
-  $('goalPreset').onchange = () => {
-    const preset = goalPresets[$('goalPreset').value];
-    if (!preset) return;
-    [$('qname').value, $('qstat').value, $('qxp').value] = preset;
+  presetSelect.onchange = () => {
+    const option = presetSelect.selectedOptions[0];
+    const reward = presetRewards[option.value];
+    if (!reward) return;
+    $('qname').value = option.text;
+    [$('qstat').value, $('qxp').value] = reward;
   };
   $('add').onclick = () => {
     const name = $('qname').value.trim();

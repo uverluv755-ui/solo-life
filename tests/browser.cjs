@@ -6,9 +6,12 @@ const { execFileSync } = require('node:child_process');
 const { chromium, webkit, devices } = require('playwright');
 const C = require('../progress.js');
 const root = path.resolve(__dirname, '..');
-const output = process.env.TEST_OUTPUT || path.join(root, 'test-results');
-fs.mkdirSync(output, { recursive: true });
+const outputRoot = process.env.TEST_OUTPUT || path.join(root, 'test-results');
+fs.mkdirSync(outputRoot, { recursive: true });
+const output = fs.mkdtempSync(path.join(outputRoot, 'run-'));
 let legacyMode = false, v03Mode = false, nextWorker = false, disconnect = false;
+let v07Mode = false;
+const v07Files = Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name => [name, execFileSync('git', ['show', 'e98dbea:' + name], { cwd: root })]));
 const v03Files = Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name => [name, execFileSync('git', ['show', '92839fb:' + name], { cwd: root })]));
 const oldHtml = execFileSync('git', ['show', 'a200901:index.html'], { cwd: root });
 const oldWorker = execFileSync('git', ['show', 'a200901:sw.js'], { cwd: root });
@@ -19,9 +22,10 @@ const server = http.createServer((req, res) => {
   if (!/^[\w.-]+$/.test(name) || !fs.existsSync(path.join(root, name))) { res.writeHead(404); res.end(); return; }
   let data = fs.readFileSync(path.join(root, name));
   if (v03Mode && v03Files[name]) data = v03Files[name];
+  if (v07Mode && v07Files[name]) data = v07Files[name];
   if (legacyMode && name === 'index.html') data = oldHtml;
   if (legacyMode && name === 'sw.js') data = oldWorker;
-  if (!legacyMode && nextWorker && name === 'sw.js') data = Buffer.from(data.toString().replace('solo-life-v04-20261105-1', 'solo-life-v04-test-update'));
+  if (!legacyMode && nextWorker && name === 'sw.js') data = Buffer.from(data.toString().replace(/^const CACHE = '[^']+';/m, "const CACHE = 'solo-life-test-update';"));
   res.writeHead(200, { 'Content-Type': mime[path.extname(name)] || 'application/octet-stream', 'Cache-Control': 'no-store' }); res.end(data);
 });
 const saveOf = page => page.evaluate(() => JSON.parse(localStorage.getItem('solo-life-v01')));
@@ -142,7 +146,7 @@ async function run(engine, url) {
     assert.deepEqual(await saveOf(page), savedBeforeUpdate);
     const cachesAfter = await page.evaluate(() => caches.keys());
     assert.ok(cachesAfter.includes('unrelated-app'));
-    assert.ok(cachesAfter.includes('solo-life-v04-test-update'));
+    assert.ok(cachesAfter.includes('solo-life-test-update'));
     assert.equal(cachesAfter.filter(k => k.startsWith('solo-life-')).length, 1);
     // WebKit's setOffline rejects SW navigations even for literal responses:
     // https://github.com/microsoft/playwright/issues/42775
@@ -261,6 +265,85 @@ async function run(engine, url) {
     assert.deepEqual(await saveOf(fullPage), before);
     await fullContext.close();
     console.log(engine + ': full storage never overwrites the original save during migration');
+
+    v07Mode = true;
+    const returning = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Asia/Tokyo' });
+    const player = await returning.newPage();
+    player.on('pageerror', error => errors.push(error.message));
+    await player.goto(url);
+    await player.waitForFunction(() => !!navigator.serviceWorker.controller);
+    assert.equal(await player.locator('.version').innerText(), 'v0.7');
+    await player.evaluate(data => localStorage.setItem('solo-life-v01', JSON.stringify(data)), fixture);
+    await player.clock.install({ time: new Date('2026-11-05T12:00:00+09:00') });
+    await player.reload();
+    const v07Save = await saveOf(player);
+    assert.deepEqual(v07Save, fixture);
+    v07Mode = false;
+    await tab(player, 'records');
+    await player.locator('#checkUpdate').click();
+    await player.locator('#applyUpdate').click();
+    await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.8');
+    assert.deepEqual(await saveOf(player), v07Save);
+    assert.ok(await player.locator('#firstQuest').isHidden());
+    if (engine === 'webkit') disconnect = true;
+    else await returning.setOffline(true);
+    await player.goto(url + 'index.html');
+    await tab(player, 'missions');
+    await player.getByRole('button', { name: '美容', exact: true }).click();
+    await player.locator('#goalPreset').selectOption('beauty-skin');
+    await player.locator('#add').click();
+    const withQuest = await saveOf(player);
+    assert.deepEqual(withQuest.quests.slice(0, -1), v07Save.quests);
+    assert.equal(withQuest.quests.at(-1).name, '夜のスキンケアをする');
+    assert.deepEqual({ ...withQuest, quests: v07Save.quests }, v07Save);
+    await player.reload();
+    assert.deepEqual(await saveOf(player), withQuest);
+    disconnect = false;
+    await returning.close();
+    console.log(engine + ': v0.7 worker update preserves the entire save and active timer; offline goal creation survives reload');
+
+    const beginner = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'block' });
+    const start = await beginner.newPage();
+    start.on('pageerror', error => errors.push(error.message));
+    await start.goto(url);
+    const initial = await saveOf(start);
+    await start.locator('#firstQuest').click();
+    const goals = start.locator('#goalChoices');
+    assert.equal(await goals.locator('button').count(), 6);
+    const candidates = start.locator('#goalPreset');
+    assert.equal(await candidates.locator('option[value]:not([value=""])').count(), 13);
+    for (const [goal, stat] of [['筋トレ','strength'], ['勉強','intellect'], ['仕事','discipline'], ['美容','discipline'], ['健康','health']]) {
+      await goals.getByRole('button', { name: goal, exact: true }).click();
+      assert.deepEqual(await candidates.locator('optgroup').evaluateAll(groups => groups.map(g => g.label)), [goal]);
+      await candidates.selectOption({ index: 1 });
+      assert.equal(await start.locator('#qstat').inputValue(), stat);
+      assert.equal(await start.locator('#qxp').inputValue(), '20');
+    }
+    await start.locator('#qname').fill('昼休みの散歩');
+    await goals.getByRole('button', { name: 'すべて', exact: true }).click();
+    assert.equal(await start.locator('#qname').inputValue(), '昼休みの散歩');
+    assert.deepEqual(await saveOf(start), initial);
+    await start.locator('#add').click();
+    const created = await saveOf(start);
+    assert.equal(created.quests.length, initial.quests.length + 1);
+    assert.deepEqual({ ...created, quests: initial.quests }, initial);
+    await start.locator('#qname').fill('昼休みの散歩');
+    await start.locator('#add').click();
+    assert.deepEqual(await saveOf(start), created);
+    for (const width of [320, 375, 390, 430]) {
+      await start.setViewportSize({ width, height: 844 });
+      assert.ok(await start.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+      const bounds = await start.locator('.tabs').boundingBox();
+      assert.ok(bounds.y >= 0 && Math.abs(bounds.y + bounds.height - 844) <= 1);
+    }
+    await tab(start, 'home');
+    await start.getByRole('button', { name: '昼休みの散歩を達成', exact: true }).click();
+    await start.reload();
+    assert.ok(await start.getByRole('button', { name: '昼休みの散歩を達成', exact: true }).isDisabled());
+    assert.equal((await saveOf(start)).totalXp, initial.totalXp + 20);
+    await beginner.close();
+    assert.deepEqual(errors, []);
+    console.log(engine + ': first visit, five filters, draft preservation, opt-in creation, duplicate protection, mobile navigation and a single reward passed');
   } finally { await browser.close(); }
 }
 
