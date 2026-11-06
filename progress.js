@@ -53,6 +53,12 @@
   }
   const weekStart = key => shiftDay(key, -((dateAt(key).getDay() + 6) % 7));
   const timestamp = value => typeof value === 'string' && Number.isFinite(Date.parse(value));
+  const planEntry = p => record(p) && safeId(p.id) && typeof p.name === 'string' &&
+    p.name.trim().length > 0 && p.name.length <= 60 && Object.hasOwn(names, p.stat);
+  const validPlan = p => planEntry(p) && validDay(p.start) && Array.isArray(p.weekdays) &&
+    p.weekdays.every(n => Number.isInteger(n) && n >= 0 && n <= 6) && new Set(p.weekdays).size === p.weekdays.length;
+  const validPlanList = (items, check) => Array.isArray(items) && items.every(check) &&
+    new Set(items.map(p => p.id)).size === items.length;
 
   function fresh() {
     return {
@@ -73,11 +79,13 @@
         !Array.isArray(x.history) || !x.history.every(h => record(h) && typeof h.label === 'string' && nonnegative(h.xp) && timestamp(h.at)) ||
         !(x.focusEnd == null || nonnegative(x.focusEnd)) ||
         !(x.focusMinutes === undefined || [1, 15, 25, 45].includes(x.focusMinutes))) return false;
+    if (x.plans !== undefined && !validPlanList(x.plans, validPlan)) return false;
     if (x.schemaVersion !== undefined && ![1, 2, SCHEMA].includes(x.schemaVersion)) return false;
     if (x.schemaVersion !== SCHEMA) return true;
     return record(x.daily) && Object.entries(x.daily).every(([d, v]) => validDay(d) && record(v) &&
       count(v.quests) && count(v.focus) && nonnegative(v.xp) && Array.isArray(v.questIds) &&
       [v.trainingOfferDone, v.trained, v.trainingRewardClaimed].every(flag => flag === undefined || typeof flag === 'boolean') &&
+      (v.planLog === undefined || (validPlanList(v.planLog, planEntry) && v.planLog.length <= v.quests)) &&
       v.questIds.every(safeId) && new Set(v.questIds).size === v.questIds.length && v.quests >= v.questIds.length &&
       (v.boardClaims === undefined || (Array.isArray(v.boardClaims) && v.boardClaims.every(id => ['a','b','urgent'].includes(id)) &&
         new Set(v.boardClaims).size === v.boardClaims.length && v.quests >= v.questIds.length + v.boardClaims.length))) &&
@@ -229,6 +237,37 @@
     d.quests++;
     return award(s,q.xp,q.stat,q.name,'quest',now);
   }
+  function duePlan(p, today) {
+    return p.start <= today && (!p.weekdays.length || p.weekdays.includes(dateAt(today).getDay()));
+  }
+  function todayPlans(s, today = day()) {
+    const done = s.daily[today]?.planLog || [];
+    const doneIds = new Set(done.map(p => p.id));
+    const pending = (s.plans || []).filter(p => duePlan(p, today) && !doneIds.has(p.id));
+    return {pending, done};
+  }
+  function putPlan(s, plan, editing = false) {
+    if (!validPlan(plan)) return '名前・日付・曜日を確認してください';
+    const plans = s.plans || [];
+    const index = plans.findIndex(p => p.id === plan.id);
+    if (editing && index < 0) return 'この予定はすでに完了または削除されています';
+    if (!editing && (index >= 0 || plans.length >= 100)) return '予定を追加できません。登録済みの予定を確認してください';
+    if (plans.some(p => p.id !== plan.id && p.name === plan.name && p.start === plan.start &&
+        p.weekdays.length === plan.weekdays.length && p.weekdays.every(d => plan.weekdays.includes(d)))) return '同じ予定が登録されています';
+    s.plans = editing ? plans.map(p => p.id === plan.id ? plan : p) : [...plans, plan];
+    return '';
+  }
+  function completePlan(s, id, shownDay, now = new Date()) {
+    if (shownDay !== day(now)) return null;
+    const p = todayPlans(s, shownDay).pending.find(item => item.id === id);
+    if (!p) return null;
+    const d = dailyRecord(s, shownDay);
+    (d.planLog ||= []).push({id, name:p.name, stat:p.stat});
+    if (!p.weekdays.length) s.plans = s.plans.filter(item => item.id !== id);
+    d.quests++;
+    if (p.stat === 'strength') d.trained = true;
+    return award(s, 20, p.stat, p.name, 'quest', now);
+  }
   const trainingTarget = 3, trainingBonus = 40;
   function trainingWeek(s, today = day()) {
     const start = weekStart(today);
@@ -262,5 +301,6 @@
     return award(s, 40, 'intellect', '集中セッション', 'focus', now);
   }
   return { KEY, SCHEMA, names, badges, ranks, growth, day, shiftDay, weekStart, fresh, valid, migrate, progress, unlock,
-    isDone, boardDone, boardQuests, completeBoardQuest, completeQuest, completeFocus, trainingWeek, claimTrainingWeek, removeQuest };
+    isDone, boardDone, boardQuests, completeBoardQuest, completeQuest, completeFocus, trainingWeek, claimTrainingWeek, removeQuest,
+    duePlan, todayPlans, putPlan, completePlan };
 });

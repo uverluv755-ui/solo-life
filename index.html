@@ -12,7 +12,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="stylesheet" href="./app.css?v=0.11.0">
+<link rel="stylesheet" href="./app.css?v=0.12.0">
 </head>
 <body>
 <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -46,14 +46,14 @@
 </div>
 <main class="wrap">
 <header class="app-header">
-  <a class="brand" href="#home" aria-label="SOLO LIFE ステータス">
+  <a class="brand" href="#home" aria-label="SOLO LIFE ホーム">
     <svg class="brand-flame" aria-hidden="true"><use href="#stat-mind"/></svg>
     SOLO LIFE
   </a>
-  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.11</span></div>
+  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.12</span></div>
 </header>
 <div class="page-intro">
-  <h1 id="pageTitle">ステータス</h1>
+  <h1 id="pageTitle">ホーム</h1>
 </div>
 <noscript>
 <p class="warning">SafariでJavaScriptを有効にして開いてください。</p>
@@ -64,7 +64,30 @@
 <p>新しいバージョンの準備ができました。進捗を保存して更新できます。</p>
 <button class="primary" id="applyUpdate">最新版に更新</button>
 </aside>
-<section class="screen active" id="home" aria-label="ステータス">
+<section class="screen active" id="home" aria-label="ホーム">
+<section class="panel planner" id="planner" aria-labelledby="planTitle">
+  <div class="section-head"><h2 id="planTitle">今日の予定</h2><span id="planCount" aria-live="polite"></span></div>
+  <form id="planForm">
+    <div class="plan-entry">
+      <input id="planName" aria-label="予定の名前" maxlength="60" placeholder="やることを入力" required enterkeyhint="done">
+      <button id="planSubmit" class="primary" type="submit">追加</button>
+    </div>
+    <details id="planOptions">
+      <summary>日付・繰り返し・能力</summary>
+      <div class="plan-fields">
+        <label>開始日<input id="planStart" type="date"></label>
+        <label>育てる能力<select id="planStat"></select></label>
+      </div>
+      <fieldset><legend>繰り返す曜日</legend><div id="planDays"></div>
+        <small>曜日を選ぶと毎週繰り返します。</small>
+      </fieldset>
+    </details>
+    <button id="planCancel" class="text-button" type="button" hidden>編集をやめる</button>
+    <p id="planError" role="alert" hidden></p>
+  </form>
+  <div id="planList"></div>
+  <details id="planManager" hidden><summary id="planManageLabel">予定を管理</summary><div id="planManageList"></div></details>
+</section>
 <section class="panel today-board" id="todayBoard" aria-labelledby="boardTitle">
   <div class="section-head"><h2 id="boardTitle">今日のクエスト</h2><span id="boardCount" class="counter"></span></div>
   <div id="dailyOffers"></div>
@@ -294,7 +317,7 @@
 <input type="file" id="import" accept="application/json,.json">
 <p class="note">旧バージョンのバックアップも読み込めます。過去の記録は保存されている範囲で復元します。端末間の自動同期には対応していません。</p>
 <button class="secondary" id="checkUpdate">更新を確認</button>
-<p class="note" id="appVersion">SOLO LIFE v0.11 · build 0.11.0</p>
+<p class="note" id="appVersion">SOLO LIFE v0.12 · build 0.12.0</p>
 </div>
 </section>
 </main>
@@ -303,7 +326,7 @@
 <svg class="icon" aria-hidden="true">
 <use href="#i-core"/>
 </svg>
-<span>ステータス</span>
+<span>ホーム</span>
 </button>
 <button data-tab="missions" aria-pressed="false" aria-controls="missions">
 <svg class="icon" aria-hidden="true">
@@ -343,10 +366,11 @@
   <button class="primary" id="continueGrowth" autofocus>閉じる</button>
 </div>
 </dialog>
-<script src="./progress.js?v=0.11.0">
+<script src="./progress.js?v=0.12.0">
 </script>
-<script src="./reminders.js?v=0.11.0"></script>
-<script src="./app.js?v=0.11.0">
+<script src="./reminders.js?v=0.12.0"></script>
+<script src="./planner.js?v=0.12.0"></script>
+<script src="./app.js?v=0.12.0">
 </script>
 </body>
 </html>

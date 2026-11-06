@@ -89,25 +89,30 @@
   }
   let boardHour = -1;
   const reminder = window.SoloReminders?.init(() => s, toast);
-  async function recordReward(button, applyReward) {
-    button.disabled = true;
+  async function updateSaved(change) {
+    if (saveLocked) { showWarning(warning); return null; }
     const complete = () => {
       const latest = localStorage.getItem(C.KEY);
       const updated = C.migrate(latest ? JSON.parse(latest) : s);
-      const result = applyReward(updated);
+      const result = change(updated);
       if (result) localStorage.setItem(C.KEY, JSON.stringify(updated));
       s = updated;
-      if (result) afterAward(result, false, true);
-      else render();
+      return result;
     };
     try {
-      if (navigator.locks) await navigator.locks.request('solo-life-quest-reward', complete);
-      else complete();
+      return navigator.locks ? await navigator.locks.request('solo-life-quest-reward', complete) : complete();
     } catch {
-      showWarning('達成を保存できませんでした。空き容量と保存データを確認してください。');
-      render();
+      showWarning('保存できませんでした。空き容量と保存データを確認してください。');
+      return null;
     }
   }
+  async function recordReward(button, applyReward) {
+    button.disabled = true;
+    const result = await updateSaved(applyReward);
+    if (result) afterAward(result, false, true);
+    else render();
+  }
+  const renderPlans = window.SoloPlanner?.init({C, $, el, statIcon, updateSaved, recordReward, refresh:render, toast});
   function boardRow(q, today) {
     const done = C.boardDone(s, q.id, today);
     const row = el('div', done ? 'quest completed' : 'quest');
@@ -157,8 +162,14 @@
     const today = C.day(), g = C.growth(s.totalXp), l = g.level, p = g.xp;
     lastDay = today;
     renderBoard();
+    renderPlans?.(s, today, saveLocked);
+    const onHome = $('home').classList.contains('active');
+    if (onHome && $('planner')) {
+      $('pageTitle').textContent = new Date().toLocaleDateString('ja-JP', {month:'long', day:'numeric', weekday:'short'});
+    }
     const dateLabel = $('todayDate');
     if (dateLabel) {
+      dateLabel.hidden = onHome && !!$('planner');
       dateLabel.dateTime = today;
       dateLabel.textContent = today.slice(5).replace('-', '.') + ' / ' +
         new Date(today + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
@@ -257,7 +268,7 @@
       row.append(info, el('b', '', `+${h.xp} XP`)); return row;
     }) : [el('p', 'muted', 'まだ記録がありません。最初の達成をここに。')]));
   }
-  const pages = { home: 'ステータス', missions: 'クエスト', focus: '集中タイマー', records: '成長記録' };
+  const pages = { home: 'ホーム', missions: 'クエスト', focus: '集中タイマー', records: '成長記録' };
   document.querySelectorAll('[data-tab]').forEach(button => {
     button.onclick = () => {
       document.querySelectorAll('[data-tab]').forEach(other => {

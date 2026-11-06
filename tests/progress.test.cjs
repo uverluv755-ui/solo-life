@@ -3,6 +3,33 @@ const assert = require('node:assert/strict');
 const C = require('../progress.js');
 const at = key => new Date(key + 'T12:00:00');
 
+test('one-off plans carry forward and recurring plans award XP only on the chosen days', () => {
+  const s = C.fresh();
+  const mon = '2026-11-02', tue = '2026-11-03', wed = '2026-11-04';
+  const task = {id:'once', name:'買い物', start:mon, weekdays:[], stat:'discipline'};
+  const habit = {id:'repeat', name:'スクワット', start:tue, weekdays:[1,3,5], stat:'strength'};
+  assert.equal(C.putPlan(s,task),'');
+  assert.equal(C.putPlan(s,habit),'');
+  assert.ok(C.putPlan(s,{...task,id:'duplicate'}));
+  assert.deepEqual(C.todayPlans(s,mon).pending,[task]);
+  assert.equal(C.completePlan(s,habit.id,mon,at(mon)),null);
+  assert.equal(C.completePlan(s,task.id,mon,at(tue)),null);
+  assert.equal(C.completePlan(s,task.id,tue,at(tue)).xp,20);
+  assert.deepEqual(C.todayPlans(s,tue).pending,[]);
+  assert.equal(C.todayPlans(s,tue).done[0].name,task.name);
+  assert.equal(C.completePlan(s,task.id,wed,at(wed)),null);
+  assert.equal(C.completePlan(s,habit.id,wed,at(wed)).xp,20);
+  assert.equal(C.completePlan(s,habit.id,wed,at(wed)),null);
+  assert.equal(C.trainingWeek(s,wed).count,1);
+  assert.equal(C.progress(s,wed).weekly,2);
+  assert.equal(C.boardQuests(s,new Date(wed + 'T20:00:00')).some(q=>q.urgent),false);
+  assert.equal(C.putPlan(s,{...habit,name:'筋トレの日'},true),'');
+  assert.equal(C.todayPlans(s,wed).done[0].name,habit.name);
+  assert.deepEqual(C.migrate(s,at(wed)),s);
+  assert.equal(C.valid({...s,plans:[{...habit,weekdays:[1,1]}]}),false);
+  assert.equal(C.todayPlans(s,'2026-11-06').pending[0].name,'筋トレの日');
+});
+
 test('daily board rotates, urgent starts at 18:00, and claims survive migration without duplicates', () => {
   const s = C.fresh(), early = new Date('2026-11-06T17:59:00'), late = new Date('2026-11-06T18:00:00');
   const tomorrow = new Date('2026-11-07T18:00:00'), today = C.day(late);

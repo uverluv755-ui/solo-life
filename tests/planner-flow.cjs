@@ -1,0 +1,68 @@
+const assert = require('node:assert/strict');
+
+module.exports = async function testPlanner(page, url, screenshotPath) {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  const moveTo = async day => {
+    await page.clock.setSystemTime(new Date(day + 'T12:00:00+09:00'));
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  };
+  const list = page.locator('#planList'), name = page.locator('#planName');
+  const submit = page.locator('#planSubmit');
+  await page.clock.install({time:new Date('2026-11-05T12:00:00+09:00')});
+  await page.goto(url);
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+  assert.equal(await page.locator('.version').innerText(),'v0.12');
+  await name.fill('図書館に本を返す');
+  await name.press('Enter');
+  await list.getByRole('button', {name:'完了：図書館に本を返す'}).waitFor();
+  await name.fill('昼休みにスクワットを10回');
+  await page.locator('#planOptions summary').click();
+  const viewport = page.viewportSize();
+  for (const width of [320, 375, 430]) {
+    await page.setViewportSize({width, height:viewport.height});
+    assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  }
+  await page.setViewportSize(viewport);
+  await page.locator('#planStart').fill('2026-11-06');
+  await page.locator('#planStat').selectOption('strength');
+  for (const weekday of ['月曜日','水曜日','金曜日']) await page.getByRole('button',{name:weekday,exact:true}).click();
+  await submit.click();
+  await page.getByRole('button',{name:'編集：昼休みにスクワットを10回'}).waitFor();
+  assert.equal(await list.locator('.plan-row').count(),1);
+  await page.locator('#planManager summary').click();
+  await page.reload();
+  await moveTo('2026-11-06');
+  assert.match(await list.innerText(),/11\/5から繰り越し/);
+  await name.fill('明日の持ち物を用意する');
+  await submit.click();
+  await list.getByRole('button',{name:'完了：明日の持ち物を用意する'}).waitFor();
+  await list.getByRole('button',{name:'完了：昼休みにスクワットを10回'}).click();
+  await list.locator('.done-mark').waitFor();
+  assert.equal(await page.locator('#trainingCount').innerText(),'1 / 3 日');
+  assert.equal(await page.locator('#planCount').innerText(),'1 / 3 完了');
+  await page.clock.fastForward(4500);
+  await page.evaluate(() => window.scrollTo(0,0));
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.screenshot({path:screenshotPath,scale:'css',animations:'disabled'});
+  await list.getByRole('button',{name:'完了：図書館に本を返す'}).click();
+  await page.waitForFunction(() => document.querySelector('#planCount').textContent === '2 / 3 完了');
+  await page.reload();
+  await moveTo('2026-11-07');
+  assert.equal(await list.locator('.plan-row').count(),1);
+  await page.locator('#planManager summary').click();
+  await page.getByRole('button',{name:'編集：明日の持ち物を用意する'}).click();
+  await name.fill('通勤バッグを準備');
+  await submit.click();
+  await list.getByRole('button',{name:'完了：通勤バッグを準備'}).waitFor();
+  await page.locator('#planManager summary').click();
+  page.once('dialog', d => d.accept());
+  await page.getByRole('button',{name:'削除：通勤バッグを準備'}).click();
+  await page.locator('#planList .plan-row').waitFor({state:'detached'});
+  await moveTo('2026-11-09');
+  await list.getByRole('button',{name:'完了：昼休みにスクワットを10回'}).waitFor();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('solo-life-v01')));
+  assert.equal(saved.totalXp,40);
+  assert.equal(saved.history.length,2);
+  assert.deepEqual(errors,[]);
+};

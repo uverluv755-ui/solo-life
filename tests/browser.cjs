@@ -5,6 +5,7 @@ const http = require('node:http');
 const { execFileSync } = require('node:child_process');
 const { chromium, webkit, devices } = require('playwright');
 const C = require('../progress.js');
+const testPlanner = require('./planner-flow.cjs');
 const root = path.resolve(__dirname, '..');
 const outputRoot = process.env.TEST_OUTPUT || path.join(root, 'test-results');
 fs.mkdirSync(outputRoot, { recursive: true });
@@ -17,7 +18,8 @@ const upgradeReleases = [
   { version: 'v0.9', commit: '04badc0' },
   { version: 'v0.9.1', commit: 'cd8bed8' },
   { version: 'v0.10', commit: 'b4ec548' },
-  { version: 'v0.10.1', commit: '9138e3a' }
+  { version: 'v0.10.1', commit: '9138e3a' },
+  { version: 'v0.11', commit: 'd63e97a' }
 ].map(release => ({
   ...release,
   files: Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name =>
@@ -175,6 +177,12 @@ async function run(engine, url) {
     assert.equal((await saveOf(page)).totalXp, savedBeforeUpdate.totalXp + 40);
     await page.reload();
     assert.equal((await saveOf(page)).totalXp, savedBeforeUpdate.totalXp + 40);
+    await page.locator('#planName').fill('オフラインで買い物を記録');
+    await page.locator('#planSubmit').click();
+    await page.locator('#planList button').click();
+    await page.locator('#planList .done-mark').waitFor();
+    await page.reload();
+    assert.equal((await saveOf(page)).totalXp, savedBeforeUpdate.totalXp + 60);
     disconnect = false;
     await context.setOffline(false);
     console.log(engine + ': PWA update, scoped cache cleanup, offline navigation and saves passed');
@@ -301,7 +309,7 @@ async function run(engine, url) {
       await tab(player, 'records');
       await player.locator('#checkUpdate').click();
       await player.locator('#applyUpdate').click();
-      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.11');
+      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.12');
       assert.deepEqual(await saveOf(player), previousSave);
       assert.ok(await player.locator('#firstQuest').isHidden());
       if (engine === 'webkit') disconnect = true;
@@ -401,6 +409,11 @@ async function run(engine, url) {
     assert.equal((await saveOf(boardPage)).totalXp,140);
     assert.equal((await saveOf(boardPage)).history.filter(h => h.type === 'weekly').length,1);
     await boardContext.close();
+    const plannerContext = await browser.newContext({ ...devices['iPhone 13'], timezoneId:'Asia/Tokyo', locale:'ja-JP' });
+    const plannerPage = await plannerContext.newPage();
+    await testPlanner(plannerPage, url, path.join(output, engine + '-planner.png'));
+    await plannerContext.close();
+    console.log(engine + ': planner scheduling, carryover, editing, deleting and persisted rewards passed');
     console.log(engine + ': daily board, 18:00 urgent offer, 20:00 reminder, overnight rotation and persisted rewards passed');
     assert.deepEqual(errors, []);
     console.log(engine + ': first visit, five filters, draft preservation, opt-in creation, duplicate protection, mobile navigation and a single reward passed');
