@@ -82,6 +82,10 @@
     lastDay = today;
     $('level').textContent = l;
     $('rank').textContent = `${g.rank.mark} · ${g.rank.name}`;
+    // Cosmetic avatar evolution derives from existing level; no save schema changes.
+    const avatar = $('heroAvatar');
+    avatar.dataset.stage = l >= 25 ? 'legend' : l >= 15 ? 'ascended' : l >= 5 ? 'awakened' : 'novice';
+    $('heroStage').textContent = l >= 25 ? '星界の先駆者' : l >= 15 ? '蒼光の覚醒者' : l >= 5 ? '黎明の挑戦者' : '覚醒の旅人';
     $('xpfill').style.width = p + '%';
     $('xptext').textContent = p + ' / 100 XP';
     $('xpBar').setAttribute('aria-valuenow', p);
