@@ -13,7 +13,8 @@ let legacyMode = false, v03Mode = false, nextWorker = false, disconnect = false;
 let previousRelease;
 const upgradeReleases = [
   { version: 'v0.7', commit: 'e98dbea' },
-  { version: 'v0.8', commit: '44be498' }
+  { version: 'v0.8', commit: '44be498' },
+  { version: 'v0.9', commit: '04badc0' }
 ].map(release => ({
   ...release,
   files: Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name =>
@@ -232,7 +233,7 @@ async function run(engine, url) {
     await tab(upgrade, 'home');
     await upgrade.getByRole('button', { name: '読書を20分を達成', exact: true }).click();
     await upgrade.locator('#awakening[open]').waitFor();
-    assert.equal(await upgrade.locator('#awakeningKind').innerText(), 'RANK AWAKENING');
+    assert.equal(await upgrade.locator('#awakeningKind').innerText(), 'RANK UP');
     assert.match(await upgrade.locator('#awakeningTitle').innerText(), /脈動/);
     assert.equal((await saveOf(upgrade)).totalXp, 420);
     assert.equal(await upgrade.locator('#continueGrowth').evaluate(e => e === document.activeElement), true);
@@ -242,6 +243,8 @@ async function run(engine, url) {
     assert.ok(box.x >= 0 && box.x + box.width <= 320 && box.height <= 568);
     await upgrade.emulateMedia({ reducedMotion: 'reduce' });
     assert.equal(await upgrade.locator('#awakening').evaluate(e => getComputedStyle(e).animationName), 'none');
+    assert.equal(await upgrade.locator('.award-scene .flame-art').evaluate(e => getComputedStyle(e).animationName), 'none');
+    assert.equal(await upgrade.locator('.award-scene .flame-field').evaluate(e => getComputedStyle(e, '::after').animationName), 'none');
     await upgrade.keyboard.press('Escape');
     assert.equal(await upgrade.locator('#awakening[open]').count(), 0);
     await upgrade.locator('.rank-details summary').click();
@@ -290,13 +293,13 @@ async function run(engine, url) {
       await tab(player, 'records');
       await player.locator('#checkUpdate').click();
       await player.locator('#applyUpdate').click();
-      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.9');
+      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.9.1');
       assert.deepEqual(await saveOf(player), previousSave);
       assert.ok(await player.locator('#firstQuest').isHidden());
       if (engine === 'webkit') disconnect = true;
       else await returning.setOffline(true);
       await player.goto(url + 'index.html');
-      assert.ok(await player.locator('.relic-art').evaluate(async img => {
+      assert.ok(await player.locator('.player-scene .flame-art').evaluate(async img => {
         await img.decode();
         return img.naturalWidth > 0;
       }), 'The illustrated player card must load offline after a PWA update');

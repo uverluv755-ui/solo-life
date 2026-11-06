@@ -61,10 +61,9 @@
     if ($('awakening').open || !celebrations.length) return;
     const result = celebrations.shift();
     $('awakening').classList.toggle('rank-up', result.rankUp);
-    $('awakeningKind').textContent = result.rankUp ? 'RANK AWAKENING' : 'LEVEL UP';
+    $('awakeningKind').textContent = result.rankUp ? 'RANK UP' : 'LEVEL UP';
     $('levelTransition').textContent = `LV.${result.before.level} → LV.${result.after.level}`;
-    $('awakeningTitle').textContent = result.rankUp ? `「${result.after.rank.name}」へ、覚醒。` : '新しい自分へ。';
-    $('awakeningText').textContent = result.rankUp ? result.after.rank.description : '積み重ねた一歩が、新しい力になりました。';
+    $('awakeningTitle').textContent = result.rankUp ? `${result.after.rank.name}に昇格` : 'レベルアップ';
     $('awardDetail').textContent = `+${result.xp} XP  ·  ${C.names[result.stat]} +${result.gain}` +
       (result.badges.length ? `\n称号「${result.badges.join('」「')}」を獲得` : '');
     $('toast').style.display = 'none';
@@ -192,12 +191,7 @@
       row.append(info, el('b', '', `+${h.xp} XP`)); return row;
     }) : [el('p', 'muted', 'まだ記録がありません。最初の達成をここに。')]));
   }
-  const pages = {
-    home: ['PLAYER STATUS', 'ステータス'],
-    missions: ['QUEST ARCHIVE', 'クエスト'],
-    focus: ['FOCUS CHAMBER', '集中タイマー'],
-    records: ['CHRONICLE', '成長記録']
-  };
+  const pages = { home: 'ステータス', missions: 'クエスト', focus: '集中タイマー', records: '成長記録' };
   document.querySelectorAll('[data-tab]').forEach(button => {
     button.onclick = () => {
       document.querySelectorAll('[data-tab]').forEach(other => {
@@ -205,9 +199,7 @@
         other.setAttribute('aria-pressed', String(other === button));
       });
       document.querySelectorAll('.screen').forEach(screen => screen.classList.toggle('active', screen.id === button.dataset.tab));
-      const [eyebrow, title] = pages[button.dataset.tab];
-      $('pageEyebrow').textContent = eyebrow;
-      $('pageTitle').textContent = title;
+      $('pageTitle').textContent = pages[button.dataset.tab];
       render(); window.scrollTo(0, 0);
     };
   });
