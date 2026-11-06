@@ -12,7 +12,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="stylesheet" href="./app.css?v=0.6.0">
+<link rel="stylesheet" href="./app.css?v=0.7.0">
 </head>
 <body>
 <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -41,7 +41,7 @@
 <a class="brand" href="#home" aria-label="SOLO LIFE ステータス">
 <svg class="icon">
 <use href="#i-core"/>
-</svg>SOLO LIFE<span class="version">v0.6</span>
+</svg>SOLO LIFE<span class="version">v0.7</span>
 </a>
 <span class="system-state">
 <i>
@@ -76,6 +76,17 @@
 </div>
 <div class="rank" id="rank">I · 灯火</div>
 </div>
+<div class="hero-avatar" id="heroAvatar" aria-hidden="true">
+<div class="hero-halo"></div>
+<svg class="hero-silhouette" viewBox="0 0 160 190"><defs><linearGradient id="heroArmor" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#9ce9ff"/><stop offset=".5" stop-color="#4376c6"/><stop offset="1" stop-color="#17284e"/></linearGradient></defs>
+<path class="hero-cloak" d="M80 80C43 82 19 115 13 177H147C141 115 117 82 80 80Z"/>
+<path class="hero-body" d="M54 90 80 105 106 90 123 122 117 175H43L37 122Z"/>
+<path class="hero-neck" d="M66 80H94L91 99 80 109 69 99Z"/>
+<path class="hero-head" d="M54 43 65 25 82 19 99 29 107 45 102 70 90 85 72 85 59 72Z"/>
+<path class="hero-hair" d="M53 49 51 32 67 16 83 13 96 21 109 36 104 53 96 42 86 46 76 38 64 48Z"/>
+<path class="hero-visor" d="M62 59 75 61M85 61 98 59"/>
+<path class="hero-mark" d="M80 117 88 131 80 146 72 131Z"/>
+</svg><span id="heroStage">覚醒の旅人</span></div>
 <div class="growth-core" aria-hidden="true">
 <div class="orbit orbit-one">
 </div>
@@ -261,7 +272,7 @@
 <input type="file" id="import" accept="application/json,.json">
 <p class="note">旧バージョンのバックアップも読み込めます。過去の記録は保存されている範囲で復元します。端末間の自動同期には対応していません。</p>
 <button class="secondary" id="checkUpdate">更新を確認</button>
-<p class="note" id="appVersion">SOLO LIFE v0.6 · build 0.6.0</p>
+<p class="note" id="appVersion">SOLO LIFE v0.7 · build 0.7.0</p>
 </div>
 </section>
 </main>
@@ -312,9 +323,9 @@
 <p class="note">成長は、あなたの中に。</p>
 </div>
 </dialog>
-<script src="./progress.js?v=0.6.0">
+<script src="./progress.js?v=0.7.0">
 </script>
-<script src="./app.js?v=0.6.0">
+<script src="./app.js?v=0.7.0">
 </script>
 </body>
 </html>
