@@ -21,6 +21,22 @@ test('delivery endpoints are limited to HTTPS browser push providers', () => {
     'https://127.0.0.1/x','https://example.com/?web.push.apple.com','https://user@web.push.apple.com/x']) assert.equal(validEndpoint(value),false);
   assert.ok(validEndpoint('https://web.push.apple.com/example'));
 });
+test('sender signs the real audience and refuses to follow push-service redirects', async t => {
+  const records = new Map();
+  const signer = new Reminder({storage:{get:k=>records.get(k),put:(k,v)=>records.set(k,v)}},{});
+  const endpoint = 'https://web.push.apple.com/example';
+  t.mock.method(globalThis,'fetch',async (url,init) => {
+    assert.equal(url,endpoint);
+    assert.equal(init.redirect,'manual'); // workerd only accepts manual or follow.
+    const auth = /^vapid t=(.+), k=([\w-]+)$/.exec(init.headers.Authorization);
+    const [head,body,signature] = auth[1].split('.');
+    assert.equal(JSON.parse(Buffer.from(body,'base64url')).aud,new URL(endpoint).origin);
+    const key=await crypto.subtle.importKey('raw',Buffer.from(auth[2],'base64url'),{name:'ECDSA',namedCurve:'P-256'},false,['verify']);
+    assert.ok(await crypto.subtle.verify({name:'ECDSA',hash:'SHA-256'},key,Buffer.from(signature,'base64url'),new TextEncoder().encode(head+'.'+body)));
+    return new Response(null,{status:201});
+  });
+  assert.deepEqual(await (await signer.send(endpoint)).json(),{status:201});
+});
 test('alarm dispatch, duplicate suppression, activity and cancellation share device state', async t => {
   const now = Date.parse('2026-11-06T20:05:00+09:00');
   t.mock.method(Date,'now',() => now);

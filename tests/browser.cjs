@@ -15,7 +15,8 @@ const upgradeReleases = [
   { version: 'v0.7', commit: 'e98dbea' },
   { version: 'v0.8', commit: '44be498' },
   { version: 'v0.9', commit: '04badc0' },
-  { version: 'v0.9.1', commit: 'cd8bed8' }
+  { version: 'v0.9.1', commit: 'cd8bed8' },
+  { version: 'v0.10', commit: 'b4ec548' }
 ].map(release => ({
   ...release,
   files: Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name =>
@@ -294,7 +295,7 @@ async function run(engine, url) {
       await tab(player, 'records');
       await player.locator('#checkUpdate').click();
       await player.locator('#applyUpdate').click();
-      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.10');
+      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.10.1');
       assert.deepEqual(await saveOf(player), previousSave);
       assert.ok(await player.locator('#firstQuest').isHidden());
       if (engine === 'webkit') disconnect = true;

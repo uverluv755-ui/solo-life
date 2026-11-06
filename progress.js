@@ -180,8 +180,11 @@
       const [name, stat, minutes = 1] = choice;
       return { id:slot, name, stat, minutes, xp:20, urgent:slot === 'urgent' };
     }
-    const daily = [entry('a', pick(dailyChoices, sequence)), entry('b', pick(dailyChoices, sequence + 3))];
-    const urgent = entry('urgent', pick(urgentChoices, sequence));
+    const first = pick(dailyChoices, sequence);
+    const otherStats = dailyChoices.filter(choice => choice[1] !== first[1]);
+    const daily = [entry('a', first), entry('b', pick(otherStats, sequence + 3))];
+    const urgentPool = urgentChoices.filter(choice => !daily.some(q => q.stat === choice[1]));
+    const urgent = entry('urgent', pick(urgentPool.length ? urgentPool : urgentChoices, sequence));
     const activity = s.daily[today];
     if (boardDone(s, urgent.id, today) || (now.getHours() >= 18 && !activity?.quests && !activity?.focus && s.focusEnd == null)) daily.push(urgent);
     return daily;

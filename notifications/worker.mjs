@@ -86,7 +86,7 @@ export class Reminder {
       auth = {expires, jwt:unsigned + '.' + b64(signature)};
       await this.storage.put(jwtKey,auth);
     }
-    const result = await fetch(endpoint, {method:'POST',redirect:'error',signal:AbortSignal.timeout(8000),
+    const result = await fetch(endpoint, {method:'POST',redirect:'manual',signal:AbortSignal.timeout(8000),
       headers:{Authorization:'vapid t=' + auth.jwt + ', k=' + key.public,TTL:'900',Topic:'solo-life-inactivity',Urgency:'normal'},
       body: new Uint8Array(0)});
     return json({status:result.status});
@@ -113,11 +113,11 @@ export class Reminder {
       if (typeof b.zone !== 'string' || b.zone.length > 80 || (b.activeDay !== null && b.activeDay !== day) ||
           (b.focusEnd !== null && !(Number.isSafeInteger(b.focusEnd) && b.focusEnd > 0 && b.focusEnd <= now + 46*minute))) return json({error:'activity'},400);
       const device = { endpoint:b.endpoint, token:b.token, zone:b.zone, activeDay:b.activeDay || previous?.activeDay || null,
-        focusEnd:b.focusEnd, sentDay:previous?.sentDay || null };
+        focusEnd:b.focusEnd, sentDay:previous?.sentDay || null, lastDelivery:previous?.lastDelivery || null };
       const plan = reminderPlan(device,now);
       await this.storage.put('device',device);
       await this.storage.setAlarm(plan.due ? Math.min((await this.storage.getAlarm()) ?? Infinity, now + minute) : plan.next);
-      return json({enabled:true});
+      return json({enabled:true, nextCheck:await this.storage.getAlarm(), lastDelivery:device.lastDelivery});
     });
   }
   async alarm() {
@@ -130,8 +130,13 @@ export class Reminder {
       // Persist first. A retry after an ambiguous network failure must not send twice.
       device.sentDay = plan.day;
       await this.storage.put('device',device);
-      const reply = await object(this.env,'signer').fetch('https://internal/send',{method:'POST',body:JSON.stringify({endpoint:device.endpoint})});
-      const {status} = await reply.json();
+      let status;
+      try {
+        const reply = await object(this.env,'signer').fetch('https://internal/send',{method:'POST',body:JSON.stringify({endpoint:device.endpoint})});
+        status = (await reply.json()).status;
+      } catch { status = 0; }
+      device.lastDelivery = {day:plan.day, status};
+      await this.storage.put('device',device);
       if ([404,410].includes(status)) {
         await this.storage.deleteAlarm(); await this.storage.delete('device');
       } else if ((status === 429 || status >= 500) && localClock(now,device.zone).minutes < 1250) {

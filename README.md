@@ -1,4 +1,4 @@
-# SOLO LIFE v0.10
+# SOLO LIFE v0.10.1
 
 毎日の行動が経験値になる、iPhone向けの人生RPG。
 

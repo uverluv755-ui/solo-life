@@ -367,7 +367,9 @@
   setInterval(updateTimer, 1000);
 
   let registration, reloadForUpdate = false;
-  function showUpdate() { if (registration?.waiting) $('updateNotice').hidden = false; }
+  function showUpdate() {
+    $('updateNotice').hidden = !(registration?.waiting && navigator.serviceWorker.controller);
+  }
   async function checkUpdate(manual = false) {
     if (!registration) { if (manual) toast('オンラインで開いてから、もう一度お試しください'); return; }
     try {
@@ -376,19 +378,23 @@
     } catch { if (manual) toast('更新を確認できませんでした。接続を確認してください'); }
   }
   $('applyUpdate').onclick = () => {
-    if (!registration?.waiting || !save()) return;
+    if (!registration?.waiting) { showUpdate(); return; }
+    if (!save()) return;
     reloadForUpdate = true; $('applyUpdate').disabled = true;
     registration.waiting.postMessage({ type: 'SKIP_WAITING' });
   };
   $('checkUpdate').onclick = () => checkUpdate(true);
   if ('serviceWorker' in navigator && window.isSecureContext) {
-    navigator.serviceWorker.addEventListener('controllerchange', () => { if (reloadForUpdate) location.reload(); });
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloadForUpdate) location.reload();
+      else showUpdate();
+    });
     navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(reg => {
       registration = reg; showUpdate();
       reg.addEventListener('updatefound', () => {
         const worker = reg.installing;
         worker?.addEventListener('statechange', () => {
-          if (worker.state === 'installed' && navigator.serviceWorker.controller) showUpdate();
+          if (['installed','activating','activated','redundant'].includes(worker.state)) showUpdate();
         });
       });
       checkUpdate();
