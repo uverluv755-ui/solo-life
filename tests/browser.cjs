@@ -10,19 +10,26 @@ const outputRoot = process.env.TEST_OUTPUT || path.join(root, 'test-results');
 fs.mkdirSync(outputRoot, { recursive: true });
 const output = fs.mkdtempSync(path.join(outputRoot, 'run-'));
 let legacyMode = false, v03Mode = false, nextWorker = false, disconnect = false;
-let v07Mode = false;
-const v07Files = Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name => [name, execFileSync('git', ['show', 'e98dbea:' + name], { cwd: root })]));
+let previousRelease;
+const upgradeReleases = [
+  { version: 'v0.7', commit: 'e98dbea' },
+  { version: 'v0.8', commit: '44be498' }
+].map(release => ({
+  ...release,
+  files: Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name =>
+    [name, execFileSync('git', ['show', release.commit + ':' + name], { cwd: root })]))
+}));
 const v03Files = Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name => [name, execFileSync('git', ['show', '92839fb:' + name], { cwd: root })]));
 const oldHtml = execFileSync('git', ['show', 'a200901:index.html'], { cwd: root });
 const oldWorker = execFileSync('git', ['show', 'a200901:sw.js'], { cwd: root });
-const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
+const mime = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png', '.webmanifest': 'application/manifest+json' };
 const server = http.createServer((req, res) => {
   if (disconnect) { req.socket.destroy(); return; }
   let name = new URL(req.url, 'http://localhost').pathname.replace(/^\/solo-life\//, '') || 'index.html';
   if (!/^[\w.-]+$/.test(name) || !fs.existsSync(path.join(root, name))) { res.writeHead(404); res.end(); return; }
   let data = fs.readFileSync(path.join(root, name));
   if (v03Mode && v03Files[name]) data = v03Files[name];
-  if (v07Mode && v07Files[name]) data = v07Files[name];
+  if (previousRelease?.files[name]) data = previousRelease.files[name];
   if (legacyMode && name === 'index.html') data = oldHtml;
   if (legacyMode && name === 'sw.js') data = oldWorker;
   if (!legacyMode && nextWorker && name === 'sw.js') data = Buffer.from(data.toString().replace(/^const CACHE = '[^']+';/m, "const CACHE = 'solo-life-test-update';"));
@@ -266,41 +273,47 @@ async function run(engine, url) {
     await fullContext.close();
     console.log(engine + ': full storage never overwrites the original save during migration');
 
-    v07Mode = true;
-    const returning = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Asia/Tokyo' });
-    const player = await returning.newPage();
-    player.on('pageerror', error => errors.push(error.message));
-    await player.goto(url);
-    await player.waitForFunction(() => !!navigator.serviceWorker.controller);
-    assert.equal(await player.locator('.version').innerText(), 'v0.7');
-    await player.evaluate(data => localStorage.setItem('solo-life-v01', JSON.stringify(data)), fixture);
-    await player.clock.install({ time: new Date('2026-11-05T12:00:00+09:00') });
-    await player.reload();
-    const v07Save = await saveOf(player);
-    assert.deepEqual(v07Save, fixture);
-    v07Mode = false;
-    await tab(player, 'records');
-    await player.locator('#checkUpdate').click();
-    await player.locator('#applyUpdate').click();
-    await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.8');
-    assert.deepEqual(await saveOf(player), v07Save);
-    assert.ok(await player.locator('#firstQuest').isHidden());
-    if (engine === 'webkit') disconnect = true;
-    else await returning.setOffline(true);
-    await player.goto(url + 'index.html');
-    await tab(player, 'missions');
-    await player.getByRole('button', { name: '美容', exact: true }).click();
-    await player.locator('#goalPreset').selectOption('beauty-skin');
-    await player.locator('#add').click();
-    const withQuest = await saveOf(player);
-    assert.deepEqual(withQuest.quests.slice(0, -1), v07Save.quests);
-    assert.equal(withQuest.quests.at(-1).name, '夜のスキンケアをする');
-    assert.deepEqual({ ...withQuest, quests: v07Save.quests }, v07Save);
-    await player.reload();
-    assert.deepEqual(await saveOf(player), withQuest);
-    disconnect = false;
-    await returning.close();
-    console.log(engine + ': v0.7 worker update preserves the entire save and active timer; offline goal creation survives reload');
+    for (const release of upgradeReleases) {
+      previousRelease = release;
+      const returning = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Asia/Tokyo' });
+      const player = await returning.newPage();
+      player.on('pageerror', error => errors.push(error.message));
+      await player.goto(url);
+      await player.waitForFunction(() => !!navigator.serviceWorker.controller);
+      assert.equal(await player.locator('.version').innerText(), release.version);
+      await player.evaluate(data => localStorage.setItem('solo-life-v01', JSON.stringify(data)), fixture);
+      await player.clock.install({ time: new Date('2026-11-05T12:00:00+09:00') });
+      await player.reload();
+      const previousSave = await saveOf(player);
+      assert.deepEqual(previousSave, fixture);
+      previousRelease = undefined;
+      await tab(player, 'records');
+      await player.locator('#checkUpdate').click();
+      await player.locator('#applyUpdate').click();
+      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.9');
+      assert.deepEqual(await saveOf(player), previousSave);
+      assert.ok(await player.locator('#firstQuest').isHidden());
+      if (engine === 'webkit') disconnect = true;
+      else await returning.setOffline(true);
+      await player.goto(url + 'index.html');
+      assert.ok(await player.locator('.relic-art').evaluate(async img => {
+        await img.decode();
+        return img.naturalWidth > 0;
+      }), 'The illustrated player card must load offline after a PWA update');
+      await tab(player, 'missions');
+      await player.getByRole('button', { name: '美容', exact: true }).click();
+      await player.locator('#goalPreset').selectOption('beauty-skin');
+      await player.locator('#add').click();
+      const withQuest = await saveOf(player);
+      assert.deepEqual(withQuest.quests.slice(0, -1), previousSave.quests);
+      assert.equal(withQuest.quests.at(-1).name, '夜のスキンケアをする');
+      assert.deepEqual({ ...withQuest, quests: previousSave.quests }, previousSave);
+      await player.reload();
+      assert.deepEqual(await saveOf(player), withQuest);
+      disconnect = false;
+      await returning.close();
+      console.log(engine + ': ' + release.version + ' worker update preserved the entire save, timer, offline artwork and custom quest');
+    }
 
     const beginner = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'block' });
     const start = await beginner.newPage();

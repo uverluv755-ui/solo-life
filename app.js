@@ -47,6 +47,16 @@
     if (text !== undefined) node.textContent = text;
     return node;
   }
+  function statIcon(key) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    const use = document.createElementNS(ns, 'use');
+    svg.setAttribute('class', 'stat-icon');
+    svg.setAttribute('aria-hidden', 'true');
+    use.setAttribute('href', '#stat-' + key);
+    svg.append(use);
+    return svg;
+  }
   function showCelebration() {
     if ($('awakening').open || !celebrations.length) return;
     const result = celebrations.shift();
@@ -80,6 +90,12 @@
   function render() {
     const today = C.day(), g = C.growth(s.totalXp), l = g.level, p = g.xp;
     lastDay = today;
+    const dateLabel = $('todayDate');
+    if (dateLabel) {
+      dateLabel.dateTime = today;
+      dateLabel.textContent = today.slice(5).replace('-', '.') + ' / ' +
+        new Date(today + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+    }
     $('level').textContent = l;
     $('rank').textContent = `${g.rank.mark} · ${g.rank.name}`;
     // Cosmetic avatar evolution derives from existing level; no save schema changes.
@@ -104,22 +120,25 @@
     $('stats').replaceChildren(...Object.entries(C.names).map(([key, name]) => {
       const node = el('div', 'stat');
       node.dataset.stat = key;
-      node.append(el('span', 'stat-code', statCodes[key]), el('span', 'stat-name', name), el('b', '', s.stats[key]));
+      node.append(statIcon(key), el('span', 'stat-code', statCodes[key]), el('span', 'stat-name', name), el('b', '', s.stats[key]));
       return node;
     }));
     let completed = 0;
     $('quests').replaceChildren(...s.quests.map(q => {
       const done = C.isDone(s, q.id, today);
       if (done) completed++;
-      const row = el('div', 'quest' + (done ? ' completed' : '')), button = el('button', '', done ? '✓' : '+');
+      const row = el('div', 'quest' + (done ? ' completed' : '')), button = el('button', '', done ? '済' : '達成');
+      row.dataset.stat = q.stat;
       button.disabled = done || saveLocked;
       button.setAttribute('aria-label', q.name + 'を達成');
       button.onclick = () => {
         afterAward(C.completeQuest(s, q.id));
       };
       const name = el('div', 'name' + (done ? ' done' : ''), q.name);
-      name.append(el('small', '', done ? '達成済み · また明日' : `${C.names[q.stat]} +${Math.max(1, Math.floor(q.xp / 20))}`));
-      row.append(button, name, el('div', 'xp', done ? '受取済み' : '+' + q.xp + ' XP'));
+      const reward = el('small');
+      reward.append(el('span', 'xp', '+' + q.xp + ' XP'), '  ·  ' + (done ? '受取済み' : `${C.names[q.stat]} +${Math.max(1, Math.floor(q.xp / 20))}`));
+      name.append(reward);
+      row.append(statIcon(q.stat), name, button);
       return row;
     }));
     if (!s.quests.length) $('quests').append(el('p', 'note', '「クエスト」から新しい挑戦を追加しましょう。'));
@@ -174,10 +193,10 @@
     }) : [el('p', 'muted', 'まだ記録がありません。最初の達成をここに。')]));
   }
   const pages = {
-    home: ['YOUR NEXT CHAPTER', '日常から、覚醒へ。', '今日の一歩が、まだ見ぬ自分をつくる。'],
-    missions: ['DAILY QUESTS', '挑戦を、日常に。', '自分で選んだ行動が、成長のきっかけになる。'],
-    focus: ['MAKE TIME COUNT', '集中する時間。', 'ひとつのことに向き合う、小さな旅。'],
-    records: ['GROWTH RECORD', '歩んだ道が、力になる。', '昨日までの挑戦は、ここに残っている。']
+    home: ['PLAYER STATUS', 'ステータス'],
+    missions: ['QUEST ARCHIVE', 'クエスト'],
+    focus: ['FOCUS CHAMBER', '集中タイマー'],
+    records: ['CHRONICLE', '成長記録']
   };
   document.querySelectorAll('[data-tab]').forEach(button => {
     button.onclick = () => {
@@ -186,7 +205,9 @@
         other.setAttribute('aria-pressed', String(other === button));
       });
       document.querySelectorAll('.screen').forEach(screen => screen.classList.toggle('active', screen.id === button.dataset.tab));
-      ['pageEyebrow', 'pageTitle', 'pageDescription'].forEach((id, i) => { $(id).textContent = pages[button.dataset.tab][i]; });
+      const [eyebrow, title] = pages[button.dataset.tab];
+      $('pageEyebrow').textContent = eyebrow;
+      $('pageTitle').textContent = title;
       render(); window.scrollTo(0, 0);
     };
   });
