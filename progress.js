@@ -77,6 +77,7 @@
     if (x.schemaVersion !== SCHEMA) return true;
     return record(x.daily) && Object.entries(x.daily).every(([d, v]) => validDay(d) && record(v) &&
       count(v.quests) && count(v.focus) && nonnegative(v.xp) && Array.isArray(v.questIds) &&
+      [v.trainingOfferDone, v.trained, v.trainingRewardClaimed].every(flag => flag === undefined || typeof flag === 'boolean') &&
       v.questIds.every(safeId) && new Set(v.questIds).size === v.questIds.length && v.quests >= v.questIds.length &&
       (v.boardClaims === undefined || (Array.isArray(v.boardClaims) && v.boardClaims.every(id => ['a','b','urgent'].includes(id)) &&
         new Set(v.boardClaims).size === v.boardClaims.length && v.quests >= v.questIds.length + v.boardClaims.length))) &&
@@ -157,7 +158,14 @@
   }
 
   const isDone = (s, id, today = day()) => s.completed[id] === today || !!s.daily[today]?.questIds.includes(id);
-  const boardDone = (s, id, today = day()) => !!s.daily[today]?.boardClaims?.includes(id);
+  const boardDone = (s, id, today = day()) => id === 'workout'
+    ? s.daily[today]?.trainingOfferDone === true : !!s.daily[today]?.boardClaims?.includes(id);
+  const workouts = [
+    ['スクワットを5回', 'strength', 1],
+    ['壁に手をついて腕立てを5回', 'strength', 1],
+    ['立ったままかかとを10回上げる', 'strength', 1],
+    ['椅子からゆっくり5回立ち上がる', 'strength', 1]
+  ];
   const dailyChoices = [
     ['机の上を2分だけ片づける', 'discipline', 2],
     ['本を3ページ読む', 'intellect', 5],
@@ -182,7 +190,7 @@
     }
     const first = pick(dailyChoices, sequence);
     const otherStats = dailyChoices.filter(choice => choice[1] !== first[1]);
-    const daily = [entry('a', first), entry('b', pick(otherStats, sequence + 3))];
+    const daily = [entry('workout', pick(workouts, sequence)), entry('a', first), entry('b', pick(otherStats, sequence + 3))];
     const urgentPool = urgentChoices.filter(choice => !daily.some(q => q.stat === choice[1]));
     const urgent = entry('urgent', pick(urgentPool.length ? urgentPool : urgentChoices, sequence));
     const activity = s.daily[today];
@@ -207,6 +215,7 @@
     const d = dailyRecord(s, today);
     d.quests++;
     d.questIds.push(q.id);
+    if (q.stat === 'strength') d.trained = true;
     s.completed[q.id] = today;
     return award(s, q.xp, q.stat, q.name, 'quest', now);
   }
@@ -215,9 +224,36 @@
     const q = boardQuests(s,now).find(q => q.id === id);
     if (!q) return null;
     const d = dailyRecord(s,shownDay);
-    (d.boardClaims ||= []).push(id);
+    if (id === 'workout') d.trainingOfferDone = true;
+    else (d.boardClaims ||= []).push(id);
     d.quests++;
     return award(s,q.xp,q.stat,q.name,'quest',now);
+  }
+  const trainingTarget = 3, trainingBonus = 40;
+  function trainingWeek(s, today = day()) {
+    const start = weekStart(today);
+    const strengthIds = new Set(s.quests.filter(q => q.stat === 'strength').map(q => q.id));
+    const days = Array.from({length:7}, (_, i) => {
+      const date = shiftDay(start, i), d = s.daily[date];
+      const trained = date <= today && !!(d?.trained || d?.trainingOfferDone || d?.questIds.some(id => strengthIds.has(id)));
+      return {date, trained};
+    });
+    return {start, days, count:days.filter(d => d.trained).length, target:trainingTarget, bonus:trainingBonus,
+      claimed:days.some(d => s.daily[d.date]?.trainingRewardClaimed)};
+  }
+  function claimTrainingWeek(s, shownWeek, now = new Date()) {
+    const today = day(now), week = trainingWeek(s, today);
+    if (week.start !== shownWeek || week.count < week.target || week.claimed) return null;
+    dailyRecord(s,today).trainingRewardClaimed = true;
+    return award(s,week.bonus,'strength','週間筋トレ · 3日達成','weekly',now);
+  }
+  function removeQuest(s, id) {
+    const quest = s.quests.find(q => q.id === id);
+    // Older saves retained IDs but not the ability. Keep identifiable training days on removal.
+    if (quest?.stat === 'strength') {
+      for (const d of Object.values(s.daily)) if (d.questIds.includes(id)) d.trained = true;
+    }
+    s.quests = s.quests.filter(q => q.id !== id);
   }
   function completeFocus(s, now = new Date()) {
     if (s.focusEnd == null || s.focusEnd > now.getTime()) return null;
@@ -225,5 +261,6 @@
     dailyRecord(s, day(now)).focus++;
     return award(s, 40, 'intellect', '集中セッション', 'focus', now);
   }
-  return { KEY, SCHEMA, names, badges, ranks, growth, day, shiftDay, weekStart, fresh, valid, migrate, progress, unlock, isDone, boardDone, boardQuests, completeBoardQuest, completeQuest, completeFocus };
+  return { KEY, SCHEMA, names, badges, ranks, growth, day, shiftDay, weekStart, fresh, valid, migrate, progress, unlock,
+    isDone, boardDone, boardQuests, completeBoardQuest, completeQuest, completeFocus, trainingWeek, claimTrainingWeek, removeQuest };
 });

@@ -425,6 +425,18 @@ input, select { background: #0e1520; border-color: #3f4f63; color: #f4eaf8; }
 .reminders summary { min-height: 44px; padding: 12px 0; color: var(--muted); font-size: 12px; cursor: pointer; }
 .reminders .note { margin: 3px 0 9px; }
 .reminders button { margin: 0 0 12px; }
+.training-week { margin: 7px 0 9px; padding: 12px; border: 1px solid #414254; border-radius: 7px; background: #1a1c28; }
+.training-week h3 { margin: 0; font-size: 14px; color: #f1e8ee; }
+#trainingCount { color: #d6ddec; font: 12px var(--mono); }
+.training-week p { display: flex; gap: 8px; justify-content: space-between; align-items: baseline; margin: 7px 0; font-size: 13px; }
+#trainingPrize { color: #f0c6ae; font-size: 11px; }
+#trainingDays { display: grid; grid-template-columns: repeat(7,minmax(0,1fr)); gap: 4px; padding: 0; margin: 8px 0 5px; list-style: none; }
+#trainingDays li { display: flex; flex-direction: column; align-items: center; padding: 3px 0; border-radius: 3px; background: #242738; color: #b5bfd0; font-size: 10px; }
+#trainingDays li[aria-current="date"] { box-shadow: inset 0 -2px #91baff; }
+#trainingDays li.trained { background: #463343; color: #ffe1cf; }
+#trainingDays b { line-height: 1.2; font-size: 13px; }
+.training-week small { color: var(--muted); font-size: 11px; }
+.training-week button { margin-top: 10px; }
 @media (min-width: 850px) {
   #home.active { grid-template-areas: "player board" "player quests"; }
   .today-board { grid-area: board; margin: 0; }

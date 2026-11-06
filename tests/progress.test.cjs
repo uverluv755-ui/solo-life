@@ -6,9 +6,9 @@ const at = key => new Date(key + 'T12:00:00');
 test('daily board rotates, urgent starts at 18:00, and claims survive migration without duplicates', () => {
   const s = C.fresh(), early = new Date('2026-11-06T17:59:00'), late = new Date('2026-11-06T18:00:00');
   const tomorrow = new Date('2026-11-07T18:00:00'), today = C.day(late);
-  assert.equal(C.boardQuests(s, early).length,2);
+  assert.equal(C.boardQuests(s, early).length,3);
   assert.equal(C.completeBoardQuest(s,'urgent',today,early), null);
-  assert.equal(C.boardQuests(s, late).length,3);
+  assert.equal(C.boardQuests(s, late).length,4);
   assert.notEqual(C.boardQuests(s,late)[0].name, C.boardQuests(s,tomorrow)[0].name);
   assert.equal(C.completeBoardQuest(s,'urgent',today,late).xp,20);
   assert.equal(C.completeBoardQuest(s,'urgent',today,late),null);
@@ -19,6 +19,36 @@ test('daily board rotates, urgent starts at 18:00, and claims survive migration 
   assert.equal(C.boardDone(restored,'urgent',today),true);
   assert.equal(C.completeBoardQuest(s,'a',today,tomorrow),null);
   assert.equal(C.boardDone(s,'urgent',C.day(tomorrow)),false);
+});
+test('daily workout and custom strength quests count distinct days; weekly bonus persists once per week', () => {
+  const s = C.fresh(), monday = '2026-11-02', wednesday = '2026-11-04', friday = '2026-11-06';
+  s.quests.push({id:'arms', name:'腕の筋トレ', stat:'strength', xp:20});
+  const offers = C.boardQuests(s, at(monday));
+  assert.equal(offers[0].stat, 'strength');
+  assert.equal(offers[0].id, 'workout');
+  assert.notEqual(offers[0].name, C.boardQuests(s, at('2026-11-03'))[0].name);
+  assert.equal(C.completeBoardQuest(s,'workout',monday,at(monday)).xp,20);
+  assert.equal(C.completeBoardQuest(s,'workout',monday,at(monday)),null);
+  C.completeQuest(s,'training',at(monday));
+  assert.equal(C.trainingWeek(s,monday).count,1);
+  C.completeQuest(s,'arms',at(wednesday));
+  delete s.daily[wednesday].trained; // A v0.10 backup only saved the registered quest's ID.
+  assert.equal(C.trainingWeek(s,wednesday).count,2);
+  C.removeQuest(s,'arms');
+  assert.equal(C.trainingWeek(s,wednesday).count,2);
+  assert.equal(C.claimTrainingWeek(s,monday,at(wednesday)),null);
+  C.completeBoardQuest(s,'workout',friday,at(friday));
+  assert.equal(C.trainingWeek(s,friday).count,3);
+  const countBefore = C.progress(s,friday).weekly, xpBefore = s.totalXp;
+  assert.equal(C.claimTrainingWeek(s,monday,at(friday)).gain,2);
+  const restored = C.migrate(s,at(friday));
+  assert.equal(restored.totalXp,xpBefore+40);
+  assert.equal(C.progress(restored,friday).weekly,countBefore);
+  assert.equal(C.trainingWeek(restored,friday).claimed,true);
+  assert.equal(C.claimTrainingWeek(restored,monday,at(friday)),null);
+  assert.equal(C.claimTrainingWeek(restored,monday,at('2026-11-09')),null);
+  assert.equal(C.trainingWeek(restored,'2026-11-09').count,0);
+  assert.equal(C.trainingWeek(restored,'2026-11-09').claimed,false);
 });
 test('existing quests, daily board, completed focus and running timer suppress an unclaimed urgent quest', () => {
   const now = new Date('2026-11-06T19:00:00');

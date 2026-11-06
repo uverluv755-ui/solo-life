@@ -2,7 +2,7 @@
   'use strict';
   const key = 'solo-life-reminder-device-v1';
   const noticeKey = 'solo-life-last-in-app-reminder';
-  const configURL = './push-config.json?v=0.10.1';
+  const configURL = './push-config.json?v=0.11.0';
   const bytes = base64 => Uint8Array.from(atob(base64.replace(/-/g,'+').replace(/_/g,'/')), c => c.charCodeAt(0));
   function token() {
     return btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');

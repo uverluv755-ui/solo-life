@@ -16,7 +16,8 @@ const upgradeReleases = [
   { version: 'v0.8', commit: '44be498' },
   { version: 'v0.9', commit: '04badc0' },
   { version: 'v0.9.1', commit: 'cd8bed8' },
-  { version: 'v0.10', commit: 'b4ec548' }
+  { version: 'v0.10', commit: 'b4ec548' },
+  { version: 'v0.10.1', commit: '9138e3a' }
 ].map(release => ({
   ...release,
   files: Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name =>
@@ -41,6 +42,11 @@ const server = http.createServer((req, res) => {
 const saveOf = page => page.evaluate(() => JSON.parse(localStorage.getItem('solo-life-v01')));
 const dismiss = async page => { if (await page.locator('#awakening[open]').count()) await page.locator('#continueGrowth').click(); };
 const tab = async (page, name) => { await dismiss(page); await page.locator(`[data-tab="${name}"]`).click(); };
+async function completeRegistered(page, name) {
+  const button = { name: name + 'を達成', exact: true };
+  await page.locator('#quests').getByRole('button', button).click();
+  await page.locator('#quests .completed').getByRole('button', button).waitFor({state:'attached'});
+}
 const setTime = async (page, time) => {
   await page.clock.setSystemTime(new Date(time));
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
@@ -95,7 +101,7 @@ async function run(engine, url) {
     await tab(page, 'home');
     await setTime(page, '2026-11-03T00:01:00+09:00');
     assert.equal(await page.getByRole('button', { name: '筋力トレーニングを達成', exact: true }).isEnabled(), true);
-    await page.getByRole('button', { name: '筋力トレーニングを達成', exact: true }).click();
+    await completeRegistered(page, '筋力トレーニング');
     assert.match(await page.locator('#streak').innerText(), /2日/);
     await tab(page, 'missions');
     await page.getByRole('button', { name: '筋力トレーニングを削除', exact: true }).click();
@@ -165,7 +171,7 @@ async function run(engine, url) {
     else await context.setOffline(true);
     await page.goto(url + 'index.html?from=homescreen');
     await page.waitForFunction(() => !!window.SoloLife && document.getElementById('quests').children.length === 3);
-    await page.getByRole('button', { name: '読書を20分を達成', exact: true }).click();
+    await completeRegistered(page, '読書を20分');
     assert.equal((await saveOf(page)).totalXp, savedBeforeUpdate.totalXp + 40);
     await page.reload();
     assert.equal((await saveOf(page)).totalXp, savedBeforeUpdate.totalXp + 40);
@@ -213,7 +219,7 @@ async function run(engine, url) {
     await upgrade.screenshot({ path: path.join(output, engine + '-v04-focus.png'), fullPage: true, scale: 'css', animations: 'disabled' });
     await upgrade.locator('#resetTimer').click();
     await tab(upgrade, 'home');
-    await upgrade.getByRole('button', { name: '朝のストレッチを達成', exact: true }).click();
+    await completeRegistered(upgrade, '朝のストレッチ');
     assert.equal((await saveOf(upgrade)).totalXp, 220);
     assert.match(await upgrade.locator('#toast').innerText(), /健康 \+1/);
     assert.equal(await upgrade.getByRole('button', { name: '朝のストレッチを達成', exact: true }).isDisabled(), true);
@@ -295,7 +301,7 @@ async function run(engine, url) {
       await tab(player, 'records');
       await player.locator('#checkUpdate').click();
       await player.locator('#applyUpdate').click();
-      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.10.1');
+      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.11');
       assert.deepEqual(await saveOf(player), previousSave);
       assert.ok(await player.locator('#firstQuest').isHidden());
       if (engine === 'webkit') disconnect = true;
@@ -355,7 +361,7 @@ async function run(engine, url) {
       assert.ok(bounds.y >= 0 && Math.abs(bounds.y + bounds.height - 844) <= 1);
     }
     await tab(start, 'home');
-    await start.getByRole('button', { name: '昼休みの散歩を達成', exact: true }).click();
+    await completeRegistered(start, '昼休みの散歩');
     await start.reload();
     assert.ok(await start.getByRole('button', { name: '昼休みの散歩を達成', exact: true }).isDisabled());
     assert.equal((await saveOf(start)).totalXp, initial.totalXp + 20);
@@ -364,11 +370,11 @@ async function run(engine, url) {
     const boardPage = await boardContext.newPage();
     await boardPage.clock.install({time:new Date('2026-11-06T17:59:00+09:00')});
     await boardPage.goto(url);
-    assert.equal(await boardPage.locator('#dailyOffers button').count(),2);
+    assert.equal(await boardPage.locator('#dailyOffers button').count(),3);
     assert.ok(await boardPage.locator('#urgentOffer').isHidden());
     await setTime(boardPage, '2026-11-06T18:00:00+09:00');
     await boardPage.locator('#urgentRow button').click();
-    await boardPage.waitForFunction(() => document.querySelector('#urgentRow button')?.disabled);
+    await boardPage.locator('#urgentRow .completed').waitFor();
     await boardPage.reload();
     assert.equal((await saveOf(boardPage)).totalXp,20);
     assert.ok(await boardPage.locator('#urgentRow button').isDisabled());
@@ -379,6 +385,21 @@ async function run(engine, url) {
     assert.equal((await saveOf(boardPage)).totalXp,40);
     assert.equal((await saveOf(boardPage)).history.length,2);
     assert.equal((await saveOf(boardPage)).quests.length,C.fresh().quests.length);
+    assert.equal(await boardPage.locator('#trainingCount').innerText(),'1 / 3 日');
+    const train = boardPage.locator('#dailyOffers [data-stat="strength"] button');
+    for (const date of ['2026-11-09','2026-11-11','2026-11-13']) {
+      await setTime(boardPage,date + 'T12:00:00+09:00');
+      await train.click();
+      await boardPage.locator('#dailyOffers .completed[data-stat="strength"]').waitFor();
+      await dismiss(boardPage);
+    }
+    await boardPage.locator('#claimTraining').click();
+    await boardPage.waitForFunction(() => document.getElementById('trainingPrize').textContent.includes('受取済み'));
+    await boardPage.reload();
+    assert.equal(await boardPage.locator('#trainingDays .trained').count(),3);
+    assert.ok(await boardPage.locator('#claimTraining').isHidden());
+    assert.equal((await saveOf(boardPage)).totalXp,140);
+    assert.equal((await saveOf(boardPage)).history.filter(h => h.type === 'weekly').length,1);
     await boardContext.close();
     console.log(engine + ': daily board, 18:00 urgent offer, 20:00 reminder, overnight rotation and persisted rewards passed');
     assert.deepEqual(errors, []);

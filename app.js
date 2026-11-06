@@ -79,7 +79,7 @@
     if (!result) return;
     if (!alreadySaved) save();
     render();
-    document.querySelector(`[data-stat="${result.stat}"]`)?.classList.add('gained');
+    document.querySelector(`#stats [data-stat="${result.stat}"]`)?.classList.add('gained');
     if (result.levelUp) { celebrations.push(result); showCelebration(); }
     else {
       let text = `${focus ? '集中セッション完了' : 'クエスト達成'} · +${result.xp} XP\n${result.label} / ${C.names[result.stat]} +${result.gain}`;
@@ -89,35 +89,57 @@
   }
   let boardHour = -1;
   const reminder = window.SoloReminders?.init(() => s, toast);
+  async function recordReward(button, applyReward) {
+    button.disabled = true;
+    const complete = () => {
+      const latest = localStorage.getItem(C.KEY);
+      const updated = C.migrate(latest ? JSON.parse(latest) : s);
+      const result = applyReward(updated);
+      if (result) localStorage.setItem(C.KEY, JSON.stringify(updated));
+      s = updated;
+      if (result) afterAward(result, false, true);
+      else render();
+    };
+    try {
+      if (navigator.locks) await navigator.locks.request('solo-life-quest-reward', complete);
+      else complete();
+    } catch {
+      showWarning('達成を保存できませんでした。空き容量と保存データを確認してください。');
+      render();
+    }
+  }
   function boardRow(q, today) {
     const done = C.boardDone(s, q.id, today);
     const row = el('div', done ? 'quest completed' : 'quest');
     row.dataset.stat = q.stat;
     const name = el('div', 'name', q.name);
-    const reward = el('small', '', q.minutes + '分 · ' + C.names[q.stat] + ' · ');
+    const workout = q.id === 'workout';
+    const reward = el('small', '', (workout ? '今日の筋トレ' : C.names[q.stat]) + ' · ' + q.minutes + '分 · ');
     reward.append(el('span', 'xp', '+' + q.xp + ' XP'));
     name.append(reward);
     const button = el('button', '', done ? '達成済み' : '達成');
     button.disabled = saveLocked || done;
     button.setAttribute('aria-label', q.name + 'を達成');
-    button.onclick = async () => {
-      button.disabled = true;
-      const complete = () => {
-        try {
-          const latest = localStorage.getItem(C.KEY);
-          const updated = C.migrate(latest ? JSON.parse(latest) : s);
-          const result = C.completeBoardQuest(updated, q.id, today);
-          if (result) localStorage.setItem(C.KEY, JSON.stringify(updated));
-          s = updated;
-          if (result) afterAward(result, false, true);
-          else render();
-        } catch { showWarning('達成を保存できませんでした。空き容量と保存データを確認してください。'); render(); }
-      };
-      if (navigator.locks) await navigator.locks.request('solo-life-quest-reward', complete);
-      else complete();
-    };
-    row.append(statIcon(q.stat), name, button);
+    button.onclick = () => recordReward(button, data => C.completeBoardQuest(data, q.id, today));
+    row.append(statIcon(workout ? 'workout' : q.stat), name, button);
     return row;
+  }
+  function renderTraining(today) {
+    const week = C.trainingWeek(s,today);
+    $('trainingCount').textContent = Math.min(week.count,week.target) + ' / ' + week.target + ' 日';
+    $('trainingPrize').textContent = week.claimed ? '＋' + week.bonus + ' XP 受取済み' : '＋' + week.bonus + ' XP';
+    $('trainingDays').replaceChildren(...week.days.map(({date,trained}, i) => {
+      const item = el('li', trained ? 'trained' : '');
+      if (date === today) item.setAttribute('aria-current','date');
+      const weekday = '月火水木金土日'[i];
+      item.setAttribute('aria-label', date + ' ' + weekday + '曜日 ' + (trained ? '達成' : date > today ? 'これから' : '未達成'));
+      item.append(el('span','',weekday), el('b','',trained ? '✓' : '–'));
+      return item;
+    }));
+    const claim = $('claimTraining');
+    claim.hidden = week.count < week.target || week.claimed;
+    claim.disabled = saveLocked;
+    claim.onclick = () => recordReward(claim, data => C.claimTrainingWeek(data,week.start));
   }
   function renderBoard(now = new Date()) {
     if (!$('todayBoard')) return;
@@ -128,6 +150,7 @@
     $('boardCount').textContent = daily.filter(q => C.boardDone(s,q.id,today)).length + ' / ' + daily.length + ' 達成';
     $('urgentOffer').hidden = !urgent;
     $('urgentRow').replaceChildren(...(urgent ? [boardRow(urgent, today)] : []));
+    if ($('trainingDays')) renderTraining(today);
     reminder?.sync();
   }
   function render() {
@@ -175,9 +198,7 @@
       row.dataset.stat = q.stat;
       button.disabled = done || saveLocked;
       button.setAttribute('aria-label', q.name + 'を達成');
-      button.onclick = () => {
-        afterAward(C.completeQuest(s, q.id));
-      };
+      button.onclick = () => recordReward(button, data => today === C.day() ? C.completeQuest(data,q.id) : null);
       const name = el('div', 'name' + (done ? ' done' : ''), q.name);
       const reward = el('small');
       reward.append(el('span', 'xp', '+' + q.xp + ' XP'), '  ·  ' + (done ? '受取済み' : `${C.names[q.stat]} +${Math.max(1, Math.floor(q.xp / 20))}`));
@@ -221,7 +242,7 @@
       const row = el('div', 'quest'), button = el('button', '', '×');
       button.setAttribute('aria-label', q.name + 'を削除');
       button.disabled = saveLocked;
-      button.onclick = () => { s.quests = s.quests.filter(v => v.id !== q.id); save(); render(); };
+      button.onclick = () => { C.removeQuest(s,q.id); save(); render(); };
       row.append(el('div', 'name', q.name + ' / ' + C.names[q.stat] + ' / ' + q.xp + ' XP'), button);
       return row;
     }));
