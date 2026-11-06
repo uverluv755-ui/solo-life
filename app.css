@@ -413,3 +413,21 @@ input, select { background: #0e1520; border-color: #3f4f63; color: #f4eaf8; }
   #missions.active, #records.active { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; align-items: start; }
   #focus.active { max-width: 560px; margin: auto; }
 }
+.today-board { border-top: 2px solid #86aef2; padding-bottom: 4px; }
+.today-board h2 { margin: 0; font-size: 19px; }
+.today-board .quest .name small { line-height: 1.5; }
+.today-board .quest { padding: 10px 0; }
+.today-board .quest button { min-width: 54px; }
+.urgent-offer { border: 1px solid #6d568d; border-radius: 7px; padding: 10px 12px 0; margin: 6px 0 10px; background: linear-gradient(100deg,#30223e,#1c1929); }
+.urgent-offer h3 { font-size: 14px; margin: 0; color: #e2c8ff; }
+.urgent-offer .section-head span { font-size: 11px; color: #cbbbd8; }
+.reminders { border-top: 1px solid var(--line); }
+.reminders summary { min-height: 44px; padding: 12px 0; color: var(--muted); font-size: 12px; cursor: pointer; }
+.reminders .note { margin: 3px 0 9px; }
+.reminders button { margin: 0 0 12px; }
+@media (min-width: 850px) {
+  #home.active { grid-template-areas: "player board" "player quests"; }
+  .today-board { grid-area: board; margin: 0; }
+  .player-column { grid-area: player; }
+  .quest-column { grid-area: quests; }
+}

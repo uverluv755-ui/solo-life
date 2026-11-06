@@ -3,6 +3,32 @@ const assert = require('node:assert/strict');
 const C = require('../progress.js');
 const at = key => new Date(key + 'T12:00:00');
 
+test('daily board rotates, urgent starts at 18:00, and claims survive migration without duplicates', () => {
+  const s = C.fresh(), early = new Date('2026-11-06T17:59:00'), late = new Date('2026-11-06T18:00:00');
+  const tomorrow = new Date('2026-11-07T18:00:00'), today = C.day(late);
+  assert.equal(C.boardQuests(s, early).length,2);
+  assert.equal(C.completeBoardQuest(s,'urgent',today,early), null);
+  assert.equal(C.boardQuests(s, late).length,3);
+  assert.notEqual(C.boardQuests(s,late)[0].name, C.boardQuests(s,tomorrow)[0].name);
+  assert.equal(C.completeBoardQuest(s,'urgent',today,late).xp,20);
+  assert.equal(C.completeBoardQuest(s,'urgent',today,late),null);
+  const restored = C.migrate(s,late);
+  assert.deepEqual(restored,s);
+  assert.equal(restored.daily[today].quests,1);
+  assert.equal(restored.history.length,1);
+  assert.equal(C.boardDone(restored,'urgent',today),true);
+  assert.equal(C.completeBoardQuest(s,'a',today,tomorrow),null);
+  assert.equal(C.boardDone(s,'urgent',C.day(tomorrow)),false);
+});
+test('existing quests, daily board, completed focus and running timer suppress an unclaimed urgent quest', () => {
+  const now = new Date('2026-11-06T19:00:00');
+  for (const action of [s => C.completeQuest(s,s.quests[0].id,now),s => C.completeBoardQuest(s,'a',C.day(now),now),
+    s => { s.focusEnd = now.getTime(); C.completeFocus(s,now); },s => { s.focusEnd = now.getTime()+60000; }]) {
+    const s = C.fresh(); action(s);
+    assert.equal(C.boardQuests(s,now).some(q => q.urgent),false);
+  }
+});
+
 test('v0.4 preserves the level-3 / 200 XP v0.3 save and every stored field', () => {
   const s = C.fresh(), now = at('2026-11-05');
   for (const q of s.quests) C.completeQuest(s, q.id, now);

@@ -12,7 +12,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="stylesheet" href="./app.css?v=0.9.1">
+<link rel="stylesheet" href="./app.css?v=0.10.0">
 </head>
 <body>
 <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -49,7 +49,7 @@
     <svg class="brand-flame" aria-hidden="true"><use href="#stat-mind"/></svg>
     SOLO LIFE
   </a>
-  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.9.1</span></div>
+  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.10</span></div>
 </header>
 <div class="page-intro">
   <h1 id="pageTitle">ステータス</h1>
@@ -64,6 +64,20 @@
 <button class="primary" id="applyUpdate">最新版に更新</button>
 </aside>
 <section class="screen active" id="home" aria-label="ステータス">
+<section class="panel today-board" id="todayBoard" aria-labelledby="boardTitle">
+  <div class="section-head"><h2 id="boardTitle">今日のクエスト</h2><span id="boardCount" class="counter"></span></div>
+  <div id="dailyOffers"></div>
+  <section id="urgentOffer" class="urgent-offer" aria-labelledby="urgentTitle" hidden>
+    <div class="section-head"><h3 id="urgentTitle">緊急クエスト</h3><span>本日 23:59 まで</span></div>
+    <div id="urgentRow"></div>
+  </section>
+  <details class="reminders">
+    <summary>未達成の日のお知らせ</summary>
+    <p class="note">18時以降、その日の達成がまだなければ1分の緊急クエストが出ます。20時ごろに1回、未達成ならお知らせします。</p>
+    <p class="note" id="pushStatus" role="status"></p>
+    <button class="secondary" id="pushToggle" hidden>端末通知をオンにする</button>
+  </details>
+</section>
 <div class="player-column">
 <article class="panel status-panel" aria-label="現在のレベルと経験値">
   <div class="player-scene">
@@ -113,7 +127,7 @@
 <div class="quest-column">
 <div class="panel daily-panel">
 <div class="section-head">
-<h2>デイリークエスト</h2>
+<h2>登録したクエスト</h2>
 <span class="counter" id="progress">
 </span>
 </div>
@@ -272,7 +286,7 @@
 <input type="file" id="import" accept="application/json,.json">
 <p class="note">旧バージョンのバックアップも読み込めます。過去の記録は保存されている範囲で復元します。端末間の自動同期には対応していません。</p>
 <button class="secondary" id="checkUpdate">更新を確認</button>
-<p class="note" id="appVersion">SOLO LIFE v0.9.1 · build 0.9.1</p>
+<p class="note" id="appVersion">SOLO LIFE v0.10 · build 0.10.0</p>
 </div>
 </section>
 </main>
@@ -321,9 +335,10 @@
   <button class="primary" id="continueGrowth" autofocus>閉じる</button>
 </div>
 </dialog>
-<script src="./progress.js?v=0.9.1">
+<script src="./progress.js?v=0.10.0">
 </script>
-<script src="./app.js?v=0.9.1">
+<script src="./reminders.js?v=0.10.0"></script>
+<script src="./app.js?v=0.10.0">
 </script>
 </body>
 </html>

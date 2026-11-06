@@ -77,7 +77,9 @@
     if (x.schemaVersion !== SCHEMA) return true;
     return record(x.daily) && Object.entries(x.daily).every(([d, v]) => validDay(d) && record(v) &&
       count(v.quests) && count(v.focus) && nonnegative(v.xp) && Array.isArray(v.questIds) &&
-      v.questIds.every(safeId) && new Set(v.questIds).size === v.questIds.length && v.quests >= v.questIds.length) &&
+      v.questIds.every(safeId) && new Set(v.questIds).size === v.questIds.length && v.quests >= v.questIds.length &&
+      (v.boardClaims === undefined || (Array.isArray(v.boardClaims) && v.boardClaims.every(id => ['a','b','urgent'].includes(id)) &&
+        new Set(v.boardClaims).size === v.boardClaims.length && v.quests >= v.questIds.length + v.boardClaims.length))) &&
       record(x.achievements) && Object.entries(x.achievements).every(([id, at]) => badges.some(b => b.id === id) && timestamp(at)) &&
       record(x.defeatedBosses) && Object.entries(x.defeatedBosses).every(([d, at]) => validDay(d) && weekStart(d) === d && timestamp(at));
   }
@@ -155,6 +157,35 @@
   }
 
   const isDone = (s, id, today = day()) => s.completed[id] === today || !!s.daily[today]?.questIds.includes(id);
+  const boardDone = (s, id, today = day()) => !!s.daily[today]?.boardClaims?.includes(id);
+  const dailyChoices = [
+    ['机の上を2分だけ片づける', 'discipline', 2],
+    ['本を3ページ読む', 'intellect', 5],
+    ['窓の外を見ながら肩をゆっくり回す', 'health', 1],
+    ['明日の予定をひとつ書く', 'discipline', 2],
+    ['気になる言葉をひとつ調べる', 'intellect', 3],
+    ['好きな曲を1曲、手を止めて聴く', 'mind', 4],
+    ['身の回りのものを3つ元に戻す', 'discipline', 2],
+    ['今日よかったことを1行書く', 'mind', 1]
+  ];
+  const urgentChoices = [
+    ['明日最初にやることを1行書く', 'discipline'],
+    ['目を閉じてゆっくり3呼吸する', 'mind'],
+    ['手の届くものをひとつ片づける', 'discipline']
+  ];
+  function boardQuests(s, now = new Date()) {
+    const today = day(now), sequence = Math.floor(Date.parse(today + 'T00:00:00Z') / 86400000);
+    const pick = (pool, index) => pool[((index % pool.length) + pool.length) % pool.length];
+    function entry(slot, choice) {
+      const [name, stat, minutes = 1] = choice;
+      return { id:slot, name, stat, minutes, xp:20, urgent:slot === 'urgent' };
+    }
+    const daily = [entry('a', pick(dailyChoices, sequence)), entry('b', pick(dailyChoices, sequence + 3))];
+    const urgent = entry('urgent', pick(urgentChoices, sequence));
+    const activity = s.daily[today];
+    if (boardDone(s, urgent.id, today) || (now.getHours() >= 18 && !activity?.quests && !activity?.focus && s.focusEnd == null)) daily.push(urgent);
+    return daily;
+  }
   function award(s, xp, stat, label, type, now) {
     const before = growth(s.totalXp);
     const gain = Math.max(1, Math.floor(xp / 20));
@@ -169,12 +200,21 @@
   }
   function completeQuest(s, id, now = new Date()) {
     const q = s.quests.find(q => q.id === id), today = day(now);
-    if (!q || isDone(s, id, today)) return null;
+    if (!q || isDone(s, q.id, today)) return null;
     const d = dailyRecord(s, today);
     d.quests++;
-    d.questIds.push(id);
-    s.completed[id] = today;
+    d.questIds.push(q.id);
+    s.completed[q.id] = today;
     return award(s, q.xp, q.stat, q.name, 'quest', now);
+  }
+  function completeBoardQuest(s, id, shownDay, now = new Date()) {
+    if (shownDay !== day(now) || boardDone(s,id,shownDay)) return null;
+    const q = boardQuests(s,now).find(q => q.id === id);
+    if (!q) return null;
+    const d = dailyRecord(s,shownDay);
+    (d.boardClaims ||= []).push(id);
+    d.quests++;
+    return award(s,q.xp,q.stat,q.name,'quest',now);
   }
   function completeFocus(s, now = new Date()) {
     if (s.focusEnd == null || s.focusEnd > now.getTime()) return null;
@@ -182,5 +222,5 @@
     dailyRecord(s, day(now)).focus++;
     return award(s, 40, 'intellect', '集中セッション', 'focus', now);
   }
-  return { KEY, SCHEMA, names, badges, ranks, growth, day, shiftDay, weekStart, fresh, valid, migrate, progress, unlock, isDone, completeQuest, completeFocus };
+  return { KEY, SCHEMA, names, badges, ranks, growth, day, shiftDay, weekStart, fresh, valid, migrate, progress, unlock, isDone, boardDone, boardQuests, completeBoardQuest, completeQuest, completeFocus };
 });

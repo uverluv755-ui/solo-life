@@ -1,8 +1,23 @@
 'use strict';
-const CACHE = 'solo-life-v091-20261106-1';
-const ASSETS = ['./', './index.html', './app.css?v=0.9.1', './progress.js?v=0.9.1', './app.js?v=0.9.1', './manifest.webmanifest', './blue-flame.webp', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png'];
+const CACHE = 'solo-life-v010-20261106-1';
+const ASSETS = ['./', './index.html', './app.css?v=0.10.0', './progress.js?v=0.10.0', './app.js?v=0.10.0', './reminders.js?v=0.10.0', './push-config.json?v=0.10.0', './manifest.webmanifest', './blue-flame.webp', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png'];
 const scope = new URL(self.registration.scope);
 const assetUrls = new Set(ASSETS.map(path => new URL(path, scope).href));
+self.addEventListener('push', event => {
+  event.waitUntil(self.registration.showNotification('SOLO LIFE · 今日のクエスト', {
+    body:'今日の達成はまだです。1分の緊急クエストから始められます。',
+    tag:'solo-life-daily-reminder',icon:new URL('./icon-192.png',scope).href
+  }));
+});
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({type:'window'});
+    const existing = windows.find(client => client.url.startsWith(scope.href));
+    if (existing) { await existing.focus(); existing.postMessage({type:'SHOW_TODAY'}); }
+    else await self.clients.openWindow(new URL('./index.html#todayBoard',scope).href);
+  })());
+});
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS.map(path => new Request(new URL(path, scope), { cache: 'reload' })))));
 });

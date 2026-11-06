@@ -75,9 +75,10 @@
     if (celebrations.length) showCelebration();
     else document.querySelector('.tabs button.active').focus({ preventScroll: true });
   });
-  function afterAward(result, focus = false) {
+  function afterAward(result, focus = false, alreadySaved = false) {
     if (!result) return;
-    save(); render();
+    if (!alreadySaved) save();
+    render();
     document.querySelector(`[data-stat="${result.stat}"]`)?.classList.add('gained');
     if (result.levelUp) { celebrations.push(result); showCelebration(); }
     else {
@@ -86,9 +87,53 @@
       toast(text);
     }
   }
+  let boardHour = -1;
+  const reminder = window.SoloReminders?.init(() => s, toast);
+  function boardRow(q, today) {
+    const done = C.boardDone(s, q.id, today);
+    const row = el('div', done ? 'quest completed' : 'quest');
+    row.dataset.stat = q.stat;
+    const name = el('div', 'name', q.name);
+    const reward = el('small', '', q.minutes + '分 · ' + C.names[q.stat] + ' · ');
+    reward.append(el('span', 'xp', '+' + q.xp + ' XP'));
+    name.append(reward);
+    const button = el('button', '', done ? '達成済み' : '達成');
+    button.disabled = saveLocked || done;
+    button.setAttribute('aria-label', q.name + 'を達成');
+    button.onclick = async () => {
+      button.disabled = true;
+      const complete = () => {
+        try {
+          const latest = localStorage.getItem(C.KEY);
+          const updated = C.migrate(latest ? JSON.parse(latest) : s);
+          const result = C.completeBoardQuest(updated, q.id, today);
+          if (result) localStorage.setItem(C.KEY, JSON.stringify(updated));
+          s = updated;
+          if (result) afterAward(result, false, true);
+          else render();
+        } catch { showWarning('達成を保存できませんでした。空き容量と保存データを確認してください。'); render(); }
+      };
+      if (navigator.locks) await navigator.locks.request('solo-life-quest-reward', complete);
+      else complete();
+    };
+    row.append(statIcon(q.stat), name, button);
+    return row;
+  }
+  function renderBoard(now = new Date()) {
+    if (!$('todayBoard')) return;
+    boardHour = now.getHours();
+    const today = C.day(now), quests = C.boardQuests(s, now);
+    const daily = quests.filter(q => !q.urgent), urgent = quests.find(q => q.urgent);
+    $('dailyOffers').replaceChildren(...daily.map(q => boardRow(q, today)));
+    $('boardCount').textContent = daily.filter(q => C.boardDone(s,q.id,today)).length + ' / ' + daily.length + ' 達成';
+    $('urgentOffer').hidden = !urgent;
+    $('urgentRow').replaceChildren(...(urgent ? [boardRow(urgent, today)] : []));
+    reminder?.sync();
+  }
   function render() {
     const today = C.day(), g = C.growth(s.totalXp), l = g.level, p = g.xp;
     lastDay = today;
+    renderBoard();
     const dateLabel = $('todayDate');
     if (dateLabel) {
       dateLabel.dateTime = today;
@@ -264,6 +309,7 @@
   $('minutes').value = String(s.focusMinutes);
   function updateTimer() {
     if (lastDay !== C.day()) { C.unlock(s); save(); render(); }
+    if (boardHour !== new Date().getHours()) renderBoard();
     const result = C.completeFocus(s);
     if (result) { focusCompleted = true; afterAward(result, true); }
     const running = s.focusEnd != null;
@@ -285,9 +331,9 @@
     focusCompleted = false;
     s.focusMinutes = Number($('minutes').value);
     s.focusEnd = Date.now() + s.focusMinutes * 60000;
-    save(); updateTimer();
+    save(); updateTimer(); renderBoard();
   };
-  $('resetTimer').onclick = () => { focusCompleted = false; s.focusEnd = null; save(); updateTimer(); toast('集中を中断しました。ここまでの経験値は変わりません。'); };
+  $('resetTimer').onclick = () => { focusCompleted = false; s.focusEnd = null; save(); updateTimer(); renderBoard(); toast('集中を中断しました。ここまでの経験値は変わりません。'); };
   $('export').onclick = () => {
     const data = saveLocked && raw ? raw : JSON.stringify(s, null, 2);
     const url = URL.createObjectURL(new Blob([data], { type: 'application/json' })), link = document.createElement('a');
@@ -351,4 +397,17 @@
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) { updateTimer(); render(); checkUpdate(); }
   });
+  function showToday() {
+    if (location.hash !== '#todayBoard') return;
+    document.querySelector('[data-tab="home"]').click();
+    $('todayBoard')?.scrollIntoView({block:'start'});
+  }
+  window.addEventListener('hashchange',showToday);
+  navigator.serviceWorker?.addEventListener('message', event => {
+    if (event.data?.type === 'SHOW_TODAY') {
+      if (location.hash === '#todayBoard') showToday();
+      else location.hash = 'todayBoard';
+    }
+  });
+  showToday();
 })();

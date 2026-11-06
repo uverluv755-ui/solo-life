@@ -14,7 +14,8 @@ let previousRelease;
 const upgradeReleases = [
   { version: 'v0.7', commit: 'e98dbea' },
   { version: 'v0.8', commit: '44be498' },
-  { version: 'v0.9', commit: '04badc0' }
+  { version: 'v0.9', commit: '04badc0' },
+  { version: 'v0.9.1', commit: 'cd8bed8' }
 ].map(release => ({
   ...release,
   files: Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name =>
@@ -293,7 +294,7 @@ async function run(engine, url) {
       await tab(player, 'records');
       await player.locator('#checkUpdate').click();
       await player.locator('#applyUpdate').click();
-      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.9.1');
+      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.10');
       assert.deepEqual(await saveOf(player), previousSave);
       assert.ok(await player.locator('#firstQuest').isHidden());
       if (engine === 'webkit') disconnect = true;
@@ -358,6 +359,27 @@ async function run(engine, url) {
     assert.ok(await start.getByRole('button', { name: '昼休みの散歩を達成', exact: true }).isDisabled());
     assert.equal((await saveOf(start)).totalXp, initial.totalXp + 20);
     await beginner.close();
+    const boardContext = await browser.newContext({ ...devices['iPhone 13'], timezoneId:'Asia/Tokyo', serviceWorkers:'block' });
+    const boardPage = await boardContext.newPage();
+    await boardPage.clock.install({time:new Date('2026-11-06T17:59:00+09:00')});
+    await boardPage.goto(url);
+    assert.equal(await boardPage.locator('#dailyOffers button').count(),2);
+    assert.ok(await boardPage.locator('#urgentOffer').isHidden());
+    await setTime(boardPage, '2026-11-06T18:00:00+09:00');
+    await boardPage.locator('#urgentRow button').click();
+    await boardPage.waitForFunction(() => document.querySelector('#urgentRow button')?.disabled);
+    await boardPage.reload();
+    assert.equal((await saveOf(boardPage)).totalXp,20);
+    assert.ok(await boardPage.locator('#urgentRow button').isDisabled());
+    await setTime(boardPage, '2026-11-07T20:00:00+09:00');
+    assert.match(await boardPage.locator('#toast').innerText(),/今日の達成はまだ/);
+    await boardPage.locator('#dailyOffers button').first().click();
+    await boardPage.waitForFunction(() => document.getElementById('urgentOffer').hidden);
+    assert.equal((await saveOf(boardPage)).totalXp,40);
+    assert.equal((await saveOf(boardPage)).history.length,2);
+    assert.equal((await saveOf(boardPage)).quests.length,C.fresh().quests.length);
+    await boardContext.close();
+    console.log(engine + ': daily board, 18:00 urgent offer, 20:00 reminder, overnight rotation and persisted rewards passed');
     assert.deepEqual(errors, []);
     console.log(engine + ': first visit, five filters, draft preservation, opt-in creation, duplicate protection, mobile navigation and a single reward passed');
   } finally { await browser.close(); }
