@@ -1,9 +1,9 @@
 {
   "name": "solo-life",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "private": true,
   "scripts": {
-    "test": "node --test tests/progress.test.cjs tests/reminders.test.mjs tests/habits.test.cjs",
+    "test": "node --test tests/progress.test.cjs tests/reminders.test.mjs tests/habits.test.cjs tests/journey.test.cjs",
     "test:browser": "node tests/browser.cjs"
   },
   "devDependencies": { "playwright": "1.62.1" }

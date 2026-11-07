@@ -12,7 +12,8 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="stylesheet" href="./app.css?v=0.13.0">
+<link rel="stylesheet" href="./app.css?v=0.14.0">
+<link rel="stylesheet" href="./journey.css?v=0.14.0">
 </head>
 <body>
 <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -50,7 +51,7 @@
     <svg class="brand-flame" aria-hidden="true"><use href="#stat-mind"/></svg>
     SOLO LIFE
   </a>
-  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.13</span></div>
+  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.14</span></div>
 </header>
 <div class="page-intro">
   <h1 id="pageTitle">ホーム</h1>
@@ -65,6 +66,14 @@
 <button class="primary" id="applyUpdate">最新版に更新</button>
 </aside>
 <section class="screen active" id="home" aria-label="ホーム">
+<section class="panel guild-panel" aria-labelledby="guildTitle">
+  <div class="guild-heading"><div class="guild-sigil" aria-hidden="true">✧</div><div><p class="eyebrow">THE QUIET COMPASS</p><h2 id="guildTitle">ギルドマスター</h2><span class="rule-badge">無料 · ルールベース · AI不使用</span></div></div>
+  <p id="guildMessage" class="guild-message" aria-live="polite"></p>
+  <div class="guild-checkin"><label for="guildFatigue">今日の調子</label><select id="guildFatigue"><option value="normal">いつもどおり</option><option value="light">軽めにしたい</option><option value="tired">疲れが強い</option><option value="rest">今日は休養する</option></select></div>
+  <p id="guildEvidence" class="note"></p>
+  <div id="guildSuggestions"></div>
+  <details class="guild-about"><summary>提案のしくみ</summary><p class="note">100種類のクエストから、毎日の目標・達成記録・今日の自己申告に合わせて候補を選びます。自由会話をするAIではありません。提案は端末内で処理し、追加料金や外部AI APIは使いません。体調の診断は行いません。つらいときは休養を優先できます。</p></details>
+</section>
 <section class="panel planner" id="planner" aria-labelledby="planTitle">
   <div class="section-head"><h2 id="planTitle">今日の予定</h2><span id="planCount" aria-live="polite"></span></div>
   <form id="planForm">
@@ -145,6 +154,8 @@
 <path class="hero-head" d="M54 43 65 25 82 19 99 29 107 45 102 70 90 85 72 85 59 72Z"/>
 <path class="hero-hair" d="M53 49 51 32 67 16 83 13 96 21 109 36 104 53 96 42 86 46 76 38 64 48Z"/>
 <path class="hero-visor" d="M62 59 75 61M85 61 98 59"/>
+<path class="hero-crown" d="M56 26 52 9 67 17 80 2 93 17 108 9 104 26Z"/>
+<path class="hero-mantle" d="M53 91 29 80 35 116 52 109M107 91 131 80 125 116 108 109"/>
 <path class="hero-mark" d="M80 117 88 131 80 146 72 131Z"/>
 </svg></div>
 <div><b id="heroStage">覚醒の旅人</b><p class="note" id="rankDescription"></p></div></div>
@@ -297,6 +308,21 @@
 </div>
 </section>
 <section class="screen" id="records" aria-label="成長記録">
+<section class="panel body-panel" aria-labelledby="bodyTitle">
+  <p class="eyebrow">REAL WORLD JOURNAL</p>
+  <div class="section-head"><h2 id="bodyTitle">身体の実測記録</h2><span id="bodyCount"></span></div>
+  <p class="note">自分で測った値を記録します。ゲームのXP・能力値とは別の記録です。値の増減は健康効果の判定ではありません。</p>
+  <form id="bodyForm">
+    <div class="journey-fields"><label>測定日<input id="bodyDate" type="date" required></label><label>記録する項目<select id="bodyMetric"></select></label></div>
+    <label id="bodyExerciseLabel">種目名<input id="bodyExercise" maxlength="60" placeholder="例：壁腕立て、ダンベルプレス"></label>
+    <label><span id="bodyValueLabel">実測値</span><input id="bodyValue" type="number" inputmode="decimal" required></label>
+    <button id="bodySubmit" class="primary">実測記録を保存</button><button id="bodyCancel" class="text-button" type="button" hidden>編集をやめる</button>
+    <p id="bodyError" role="alert" hidden></p>
+  </form>
+  <h3>実測値の変化</h3><div id="bodyTrends"></div>
+  <p class="note">同じ項目・種目名の最新値を、前の測定日と比較します。時間や回数の合計ではありません。</p>
+  <div id="bodyList"></div><button id="bodyMore" class="secondary" hidden>さらに10件表示</button>
+</section>
 <section class="panel growth-period" aria-labelledby="growthTitle">
   <div class="section-head"><h2 id="growthTitle">期間別の成長記録</h2><span id="growthDates"></span></div>
   <div class="period-choices" role="group" aria-label="表示期間">
@@ -333,8 +359,31 @@
 <input type="file" id="import" accept="application/json,.json">
 <p class="note">旧バージョンのバックアップも読み込めます。過去の記録は保存されている範囲で復元します。端末間の自動同期には対応していません。</p>
 <button class="secondary" id="checkUpdate">更新を確認</button>
-<p class="note" id="appVersion">SOLO LIFE v0.13 · build 0.13.0</p>
+<p class="note" id="appVersion">SOLO LIFE v0.14 · build 0.14.0</p>
 </div>
+</section>
+<section class="screen" id="journey" aria-label="育成">
+<section class="panel evolution-panel">
+<p class="eyebrow">AWAKEN YOUR LIGHT</p><h2>アバター進化</h2>
+<div id="evolutionArt" aria-hidden="true"></div><h3 id="evolutionName"></h3><p id="evolutionNext"></p>
+<ol id="evolutionPath" aria-label="アバターの進化段階"></ol>
+<p class="note">累計XPによる見た目の成長です。休んでも姿は戻りません。</p>
+</section>
+<section class="panel goal-boss-panel">
+<p class="eyebrow">A BATTLE AT YOUR PACE</p><h2>目標ボス</h2>
+<p class="note">期限のない挑戦。作成後、対象クエストを達成した日に1ダメージ。1日に何件達成しても1回です。休養・休戦でHPは回復せず、進捗も減りません。</p>
+<div id="goalBossList"></div>
+<details><summary>新しい目標ボスを作る</summary><form id="goalBossForm">
+<label>目標の名前<input id="goalBossName" maxlength="60" placeholder="例：散歩のある暮らしを育てる" required></label>
+<div class="journey-fields"><label>対象の能力<select id="goalBossStat"><option value="any">すべてのクエスト</option></select></label><label>達成する日数<select id="goalBossTarget"><option value="3">3日</option><option value="7">7日</option><option value="14">14日</option><option value="30">30日</option></select></label></div>
+<button class="primary" id="goalBossSubmit">目標ボスを召喚</button><p id="goalBossError" role="alert" hidden></p>
+</form></details><p class="note">討伐の証はこの画面に残ります。追加XPは発生しません。集中タイマー・実測入力はダメージ対象外です。既存の週間ボスはホームにあります。</p>
+</section>
+<section class="panel skills-panel"><p class="eyebrow">CONSTELLATION OF SKILLS</p>
+<div class="section-head"><h2>スキルツリー</h2><span id="skillCount"></span></div>
+<p class="note">ゲーム能力値で紋章と専用の候補を解放。習得は無料で、休養しても失われません。実際の身体能力を示すものではありません。</p>
+<div id="skillTree"></div><p class="note">紋章自体はXPや能力値を増やしません。既存のクエストは引き続き自由に選べます。</p>
+</section>
 </section>
 </main>
 <nav class="tabs" aria-label="メニュー">
@@ -364,6 +413,7 @@
 </svg>
 <span>記録</span>
 </button>
+<button data-tab="journey" aria-pressed="false" aria-controls="journey"><svg class="icon" aria-hidden="true"><use href="#stat-mind"/></svg><span>育成</span></button>
 </nav>
 <dialog id="awakening" class="awakening" aria-labelledby="awakeningTitle" aria-describedby="levelTransition awakeningText awardDetail">
 <div class="award-scene">
@@ -382,12 +432,14 @@
   <button class="primary" id="continueGrowth" autofocus>閉じる</button>
 </div>
 </dialog>
-<script src="./habits.js?v=0.13.0"></script>
-<script src="./progress.js?v=0.13.0">
+<script src="./habits.js?v=0.14.0"></script>
+<script src="./journey.js?v=0.14.0"></script>
+<script src="./progress.js?v=0.14.0">
 </script>
-<script src="./reminders.js?v=0.13.0"></script>
-<script src="./planner.js?v=0.13.0"></script>
-<script src="./app.js?v=0.13.0">
+<script src="./reminders.js?v=0.14.0"></script>
+<script src="./planner.js?v=0.14.0"></script>
+<script src="./journey-ui.js?v=0.14.0"></script>
+<script src="./app.js?v=0.14.0">
 </script>
 </body>
 </html>

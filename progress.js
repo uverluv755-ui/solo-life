@@ -8,6 +8,7 @@
   const KEY = 'solo-life-v01';
   const SCHEMA = 3;
   const habits = typeof module === 'object' && module.exports ? require('./habits.js') : globalThis.SoloHabits;
+  const journey = typeof module === 'object' && module.exports ? require('./journey.js') : globalThis.SoloJourney;
   const boardSlots = ['workout','a','b','c','d','e'];
   const validGoal = goal => goal === 'balance' || (habits ? Object.hasOwn(habits.categories, goal) : safeId(goal));
   // v0.4 changes presentation, not the save schema or the 100 XP level curve.
@@ -82,6 +83,7 @@
         !Array.isArray(x.history) || !x.history.every(h => record(h) && typeof h.label === 'string' && nonnegative(h.xp) && timestamp(h.at)) ||
         !(x.focusEnd == null || nonnegative(x.focusEnd)) ||
         !(x.focusMinutes === undefined || [1, 15, 25, 45].includes(x.focusMinutes))) return false;
+    if (x.journey !== undefined && (!journey || !journey.valid(x.journey))) return false;
     if (x.plans !== undefined && !validPlanList(x.plans, validPlan)) return false;
     if (x.habitGoal !== undefined && !validGoal(x.habitGoal)) return false;
     if (x.schemaVersion !== undefined && ![1, 2, SCHEMA].includes(x.schemaVersion)) return false;
@@ -214,7 +216,7 @@
     const urgentPool = urgentChoices.filter(choice => !daily.some(q => q.stat === choice[1]));
     const urgent = entry('urgent', pick(urgentPool.length ? urgentPool : urgentChoices, sequence));
     const activity = s.daily[today];
-    if (boardDone(s, urgent.id, today) || (now.getHours() >= 18 && !activity?.quests && !activity?.focus && s.focusEnd == null)) daily.push(urgent);
+    if (boardDone(s, urgent.id, today) || (journey?.fatigue(s, today) !== 'rest' && now.getHours() >= 18 && !activity?.quests && !activity?.focus && s.focusEnd == null)) daily.push(urgent);
     return daily;
   }
   function boardSetup(s, today = day()) {
@@ -287,6 +289,7 @@
     s.history.unshift({ label, xp, at: now.toISOString(), type });
     s.history = s.history.slice(0, 100);
     dailyRecord(s, day(now)).xp += xp;
+    if (type === 'quest') journey?.advanceBosses(s, stat, day(now));
     const after = growth(s.totalXp);
     return { xp, stat, gain, label, before, after, levelUp: after.level > before.level,
       rankUp: after.rank.level > before.rank.level, badges: unlock(s, now) };

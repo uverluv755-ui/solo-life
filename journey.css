@@ -1,0 +1,82 @@
+/* Original constellations, engraved borders and cool gold light. */
+.guild-panel { position:relative; overflow:hidden; border-color:#64769d; background:radial-gradient(ellipse at 100% 0,#57578f44,transparent 65%),linear-gradient(125deg,#172032,#10131d); }
+.guild-panel::before { content:""; position:absolute; right:-45px; top:-70px; width:190px; height:190px; border:1px solid #a8c7ff30; transform:rotate(35deg); pointer-events:none; }
+.guild-heading { display:flex; align-items:center; gap:15px; }
+.guild-heading h2 { font-size:20px; margin:0 0 7px; }
+.guild-heading .eyebrow { color:#c3af87; font-size:9px; margin:0 0 6px; letter-spacing:2px; }
+.guild-sigil { flex:none; width:54px; height:66px; display:grid; place-items:center; font:50px Georgia,serif; color:#e6d0a2; border:1px solid #827956; clip-path:polygon(50% 0,100% 20%,100% 80%,50% 100%,0 80%,0 20%); background:linear-gradient(135deg,#635d4340,#0d1628); text-shadow:0 0 22px #e3be7f; }
+.rule-badge { font-size:10px; color:#b9ccd9; border-bottom:1px solid #65758e; padding-bottom:4px; }
+.guild-message { font-size:15px; line-height:1.9; color:#eef0ff; margin:22px 0 15px; }
+.guild-checkin { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:12px; }
+.guild-checkin label { margin:0; white-space:nowrap; font-size:12px; }
+.guild-checkin select { margin:0; }
+.guild-offer { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:10px; border-top:1px solid #53607b60; padding:14px 0; }
+.guild-offer strong { display:block; font-size:13px; font-weight:500; line-height:1.7; }
+.guild-offer small { display:block; font-size:10px; line-height:1.8; margin-top:4px; color:#b4bed0; }
+.guild-offer button,.body-row button,.skill-node button { min-height:44px; border:1px solid #637da7; border-radius:5px; background:#22334b; color:#e0ebff; padding:7px 9px; font-size:11px; }
+.guild-about summary,.goal-boss-panel summary { min-height:44px; padding:12px 0; cursor:pointer; font-size:12px; color:#c0cce1; }
+.journey-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.journey-fields label { min-width:0; }
+.journey-fields input,.journey-fields select { width:100%; min-width:0; }
+.body-panel h3 { font-size:14px; margin:24px 0 12px; }
+#bodyError,#goalBossError { color:#ffbdac; font-size:12px; }
+#bodyTrends { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.body-trend { border-left:2px solid #8199ac; background:#15202a; padding:10px; overflow-wrap:anywhere; }
+.body-trend b,.body-trend span,.body-trend small { display:block; }
+.body-trend b { font-size:11px; }
+.body-trend span { font-size:21px; margin:7px 0; font-variant-numeric:tabular-nums; }
+.body-trend small { font-size:10px; line-height:1.7; }
+.body-row { display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:7px; border-top:1px solid #334052; padding:12px 0; }
+.body-row strong { font-size:12px; font-weight:500; overflow-wrap:anywhere; }
+.body-row small { display:block; margin-top:5px; font-size:11px; }
+.evolution-panel { text-align:center; background:radial-gradient(ellipse at 50% 35%,#3c406c55,transparent 55%),#121723; border-color:#706483; }
+#evolutionArt { display:flex; justify-content:center; margin:16px 0; }
+#evolutionArt .hero-avatar { width:180px; height:200px; flex-basis:180px; }
+#evolutionName { font-weight:500; color:#e8d0a2; }
+#evolutionNext { font-size:12px; color:#c2cae1; }
+#evolutionPath { list-style:none; padding:0; margin:22px 0 0; display:flex; gap:4px; }
+#evolutionPath li { flex:1; min-width:0; border-top:2px solid #3c4257; padding:10px 2px; color:#9ea6bd; }
+#evolutionPath li.reached { color:#d7e5ff; border-color:#9baad2; }
+#evolutionPath li[aria-current] { border-color:#e6ca8f; background:#b79a4f15; }
+#evolutionPath b,#evolutionPath span { display:block; font-size:10px; line-height:1.8; }
+.hero-avatar[data-stage="crowned"] .hero-halo { background:radial-gradient(ellipse,#fff0b399,#9367d855 45%,transparent 70%); box-shadow:0 0 40px #c7a2ff33; }
+.hero-avatar[data-stage="crowned"] .hero-silhouette { filter:drop-shadow(0 0 12px #fcdf93); }
+.hero-avatar[data-stage="crowned"] .hero-cloak { fill:#51476b; stroke:#f2d69f; }
+.hero-avatar[data-stage="crowned"] .hero-mark { fill:#fff4c6; }
+.goal-boss { position:relative; margin:16px 0; padding:18px; border:1px solid #695c7c; background:linear-gradient(130deg,#33223d77,#121b29); border-radius:8px; overflow-wrap:anywhere; }
+.goal-boss h3 { font-size:17px; font-weight:500; margin:10px 0; }
+.goal-boss p { font-size:12px; }
+.goal-boss small { font-size:11px; }
+.goal-boss .bar { height:8px; }
+.goal-boss .fill { background:linear-gradient(90deg,#8272bc,#e0be8a); }
+.goal-boss.defeated { border-color:#a68d58; background:linear-gradient(130deg,#5f4e2833,#121b29); }
+.goal-boss.defeated .eyebrow { color:#ecd5a5; }
+#skillTree { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px 12px; margin-top:24px; }
+.skill-branch h3 { color:#bed2f6; font-size:13px; font-weight:500; margin:0 0 16px; }
+.skill-node { position:relative; border:1px solid #3e4b64; border-radius:8px; background:#131a29; padding:12px; margin:0 0 14px; min-width:0; }
+.skill-node+.skill-node::before { content:""; position:absolute; width:1px; height:15px; background:#7487af; left:50%; top:-16px; }
+.skill-node.learned { border-color:#b49a63; background:linear-gradient(140deg,#76613826,#162033); }
+.skill-node b { display:block; font-size:12px; }
+.skill-node small { display:block; font-size:10px; line-height:1.8; margin:8px 0; }
+.skill-node button { width:100%; line-height:1.7; }
+.skill-node .note { font-size:10px; }
+@media (min-width:850px) {
+  #home.active { grid-template-areas:"guild player" "planner player" "board player" "quests player"; }
+  .guild-panel { grid-area:guild; margin:0; }
+  #journey.active { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; align-items:start; }
+  .skills-panel { grid-column:1/-1; }
+  #skillTree { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .body-panel { grid-row:span 3; }
+}
+@media (max-width:360px) {
+  .guild-heading { gap:10px; }
+  .guild-sigil { width:40px; }
+  .guild-heading h2 { font-size:18px; }
+  .journey-fields { grid-template-columns:minmax(0,1fr); }
+  #skillTree { gap:12px 8px; }
+  .skill-node { padding:9px; }
+}
+
+.hero-crown,.hero-mantle { display:none; }
+.hero-avatar[data-stage="ascended"] .hero-mantle,.hero-avatar[data-stage="legend"] .hero-mantle,.hero-avatar[data-stage="crowned"] .hero-mantle { display:block; fill:#354c76; stroke:#c7b7e8; }
+.hero-avatar[data-stage="crowned"] .hero-crown { display:block; fill:#4a3a45; stroke:#ffe2a4; stroke-width:2; }

@@ -7,6 +7,7 @@ const { chromium, webkit, devices } = require('playwright');
 const C = require('../progress.js');
 const testPlanner = require('./planner-flow.cjs');
 const testHabits = require('./habit-flow.cjs');
+const testJourney = require('./journey-flow.cjs');
 const root = path.resolve(__dirname, '..');
 const outputRoot = process.env.TEST_OUTPUT || path.join(root, 'test-results');
 fs.mkdirSync(outputRoot, { recursive: true });
@@ -21,7 +22,8 @@ const upgradeReleases = [
   { version: 'v0.10', commit: 'b4ec548' },
   { version: 'v0.10.1', commit: '9138e3a' },
   { version: 'v0.11', commit: 'd63e97a' },
-  { version: 'v0.12', commit: 'c109536' }
+  { version: 'v0.12', commit: 'c109536' },
+  { version: 'v0.13', commit: '2d9f5fb' }
 ].map(release => ({
   ...release,
   files: Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name =>
@@ -56,6 +58,16 @@ const setTime = async (page, time) => {
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
 };
 async function run(engine, url) {
+  if (process.env.FLOW === 'journey') {
+    const browser = await (engine === 'webkit' ? webkit.launch() : chromium.launch({channel:process.env.CHROME_CHANNEL || 'chrome'}));
+    try {
+      const context = await browser.newContext({...devices['iPhone 13'], timezoneId:'Asia/Tokyo', locale:'ja-JP', acceptDownloads:true});
+      await testJourney(await context.newPage(), url, path.join(output,engine+'-journey'));
+      await context.close();
+      console.log(engine + ': journey feature and mobile layout tests passed');
+    } finally { await browser.close(); }
+    return;
+  }
   legacyMode = true; nextWorker = false; disconnect = false;
   const browser = await (engine === 'webkit' ? webkit.launch() : chromium.launch({ channel: process.env.CHROME_CHANNEL || 'chrome' }));
   const context = await browser.newContext({ ...devices['iPhone 13'], timezoneId: 'Asia/Tokyo', acceptDownloads: true });
@@ -321,7 +333,7 @@ async function run(engine, url) {
       await tab(player, 'records');
       await player.locator('#checkUpdate').click();
       await Promise.all([player.waitForEvent('load'), player.locator('#applyUpdate').click()]);
-      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.13');
+      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.14');
       assert.deepEqual(await saveOf(player), previousSave);
       assert.ok(await player.locator('#firstQuest').isHidden());
       if (engine === 'webkit') disconnect = true;
@@ -434,6 +446,10 @@ async function run(engine, url) {
     await testHabits(habitPage, url, path.join(output, engine + '-habits'));
     await habitContext.close();
     console.log(engine + ': personalized goals, 3 difficulty stages, 7/30/90-day records, concurrent claims, backups and failed-save rollback passed');
+    const journeyContext = await browser.newContext({...devices['iPhone 13'], timezoneId:'Asia/Tokyo', locale:'ja-JP', acceptDownloads:true});
+    await testJourney(await journeyContext.newPage(), url, path.join(output, engine + '-journey'));
+    await journeyContext.close();
+    console.log(engine + ': guild, measurements, goal bosses, evolution, skills, full backup, failed saves and mobile/desktop layouts passed');
   } finally { await browser.close(); }
 }
 
