@@ -33,9 +33,9 @@ test('one-off plans carry forward and recurring plans award XP only on the chose
 test('daily board rotates, urgent starts at 18:00, and claims survive migration without duplicates', () => {
   const s = C.fresh(), early = new Date('2026-11-06T17:59:00'), late = new Date('2026-11-06T18:00:00');
   const tomorrow = new Date('2026-11-07T18:00:00'), today = C.day(late);
-  assert.equal(C.boardQuests(s, early).length,3);
+  assert.equal(C.boardQuests(s, early).length,5);
   assert.equal(C.completeBoardQuest(s,'urgent',today,early), null);
-  assert.equal(C.boardQuests(s, late).length,4);
+  assert.equal(C.boardQuests(s, late).length,6);
   assert.notEqual(C.boardQuests(s,late)[0].name, C.boardQuests(s,tomorrow)[0].name);
   assert.equal(C.completeBoardQuest(s,'urgent',today,late).xp,20);
   assert.equal(C.completeBoardQuest(s,'urgent',today,late),null);

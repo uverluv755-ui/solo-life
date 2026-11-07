@@ -12,7 +12,7 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="stylesheet" href="./app.css?v=0.12.0">
+<link rel="stylesheet" href="./app.css?v=0.13.0">
 </head>
 <body>
 <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -50,7 +50,7 @@
     <svg class="brand-flame" aria-hidden="true"><use href="#stat-mind"/></svg>
     SOLO LIFE
   </a>
-  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.12</span></div>
+  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.13</span></div>
 </header>
 <div class="page-intro">
   <h1 id="pageTitle">ホーム</h1>
@@ -90,6 +90,11 @@
 </section>
 <section class="panel today-board" id="todayBoard" aria-labelledby="boardTitle">
   <div class="section-head"><h2 id="boardTitle">今日のクエスト</h2><span id="boardCount" class="counter"></span></div>
+  <div class="board-preferences">
+    <label for="habitGoal">毎日の目標</label>
+    <select id="habitGoal"><option value="balance">バランスよく取り組む</option></select>
+    <p class="note" id="boardLevel" aria-live="polite"></p>
+  </div>
   <div id="dailyOffers"></div>
   <section id="urgentOffer" class="urgent-offer" aria-labelledby="urgentTitle" hidden>
     <div class="section-head"><h3 id="urgentTitle">緊急クエスト</h3><span>本日 23:59 まで</span></div>
@@ -292,6 +297,17 @@
 </div>
 </section>
 <section class="screen" id="records" aria-label="成長記録">
+<section class="panel growth-period" aria-labelledby="growthTitle">
+  <div class="section-head"><h2 id="growthTitle">期間別の成長記録</h2><span id="growthDates"></span></div>
+  <div class="period-choices" role="group" aria-label="表示期間">
+    <button type="button" data-period="7" aria-pressed="true">7日</button>
+    <button type="button" data-period="30" aria-pressed="false">30日</button>
+    <button type="button" data-period="90" aria-pressed="false">90日</button>
+  </div>
+  <div id="growthNumbers" aria-live="polite"></div>
+  <p id="growthChange"></p>
+  <p class="note" id="growthActions"></p>
+</section>
 <div class="panel">
 <h2>これまでの記録</h2>
 <p id="summary">
@@ -317,7 +333,7 @@
 <input type="file" id="import" accept="application/json,.json">
 <p class="note">旧バージョンのバックアップも読み込めます。過去の記録は保存されている範囲で復元します。端末間の自動同期には対応していません。</p>
 <button class="secondary" id="checkUpdate">更新を確認</button>
-<p class="note" id="appVersion">SOLO LIFE v0.12 · build 0.12.0</p>
+<p class="note" id="appVersion">SOLO LIFE v0.13 · build 0.13.0</p>
 </div>
 </section>
 </main>
@@ -366,11 +382,12 @@
   <button class="primary" id="continueGrowth" autofocus>閉じる</button>
 </div>
 </dialog>
-<script src="./progress.js?v=0.12.0">
+<script src="./habits.js?v=0.13.0"></script>
+<script src="./progress.js?v=0.13.0">
 </script>
-<script src="./reminders.js?v=0.12.0"></script>
-<script src="./planner.js?v=0.12.0"></script>
-<script src="./app.js?v=0.12.0">
+<script src="./reminders.js?v=0.13.0"></script>
+<script src="./planner.js?v=0.13.0"></script>
+<script src="./app.js?v=0.13.0">
 </script>
 </body>
 </html>

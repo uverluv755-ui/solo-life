@@ -6,6 +6,7 @@ const { execFileSync } = require('node:child_process');
 const { chromium, webkit, devices } = require('playwright');
 const C = require('../progress.js');
 const testPlanner = require('./planner-flow.cjs');
+const testHabits = require('./habit-flow.cjs');
 const root = path.resolve(__dirname, '..');
 const outputRoot = process.env.TEST_OUTPUT || path.join(root, 'test-results');
 fs.mkdirSync(outputRoot, { recursive: true });
@@ -19,7 +20,8 @@ const upgradeReleases = [
   { version: 'v0.9.1', commit: 'cd8bed8' },
   { version: 'v0.10', commit: 'b4ec548' },
   { version: 'v0.10.1', commit: '9138e3a' },
-  { version: 'v0.11', commit: 'd63e97a' }
+  { version: 'v0.11', commit: 'd63e97a' },
+  { version: 'v0.12', commit: 'c109536' }
 ].map(release => ({
   ...release,
   files: Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name =>
@@ -90,7 +92,7 @@ async function run(engine, url) {
     assert.equal(migrated.daily['2026-11-02'].quests, 2);
     assert.equal(await page.getByRole('button', { name: '筋力トレーニングを達成', exact: true }).isDisabled(), true);
     await page.locator('#applyUpdate').waitFor({ state: 'visible' });
-    await page.locator('#applyUpdate').click();
+    await Promise.all([page.waitForEvent('load'), page.locator('#applyUpdate').click()]);
     await page.waitForFunction(() => document.getElementById('updateNotice').hidden && !!navigator.serviceWorker.controller);
     console.log(engine + ': old app, old worker and active timer migrated without losing data');
 
@@ -159,7 +161,7 @@ async function run(engine, url) {
     await page.locator('#applyUpdate').waitFor({ state: 'visible' });
     assert.equal(await page.locator('#qname').inputValue(), '更新前の入力');
     const savedBeforeUpdate = await saveOf(page);
-    await page.locator('#applyUpdate').click();
+    await Promise.all([page.waitForEvent('load'), page.locator('#applyUpdate').click()]);
     await page.waitForFunction(() => document.getElementById('updateNotice').hidden);
     assert.deepEqual(await saveOf(page), savedBeforeUpdate);
     const cachesAfter = await page.evaluate(() => caches.keys());
@@ -183,6 +185,16 @@ async function run(engine, url) {
     await page.locator('#planList .done-mark').waitFor();
     await page.reload();
     assert.equal((await saveOf(page)).totalXp, savedBeforeUpdate.totalXp + 60);
+    await page.locator('#habitGoal').selectOption('walk');
+    await page.locator('#dailyOffers .quest').nth(1).locator('button').click();
+    await page.locator('#dailyOffers .completed').waitFor();
+    await dismiss(page);
+    await page.reload();
+    assert.equal((await saveOf(page)).totalXp, savedBeforeUpdate.totalXp + 80);
+    assert.equal(await page.locator('#habitGoal').inputValue(), 'walk');
+    await tab(page, 'records');
+    await page.locator('[data-period="90"]').click();
+    assert.match(await page.locator('#growthActions').innerText(), /歩行 [1-9][0-9]*分/);
     disconnect = false;
     await context.setOffline(false);
     console.log(engine + ': PWA update, scoped cache cleanup, offline navigation and saves passed');
@@ -217,7 +229,7 @@ async function run(engine, url) {
     assert.equal(await upgrade.locator('#level').innerText(), '3');
     assert.equal(await upgrade.locator('#awakening[open]').count(), 0);
     await upgrade.locator('#applyUpdate').waitFor({ state: 'visible' });
-    await upgrade.locator('#applyUpdate').click();
+    await Promise.all([upgrade.waitForEvent('load'), upgrade.locator('#applyUpdate').click()]);
     await upgrade.waitForFunction(() => document.getElementById('updateNotice').hidden);
     assert.deepEqual(await saveOf(upgrade), fixture);
     await upgrade.screenshot({ path: path.join(output, engine + '-v04-status.png'), fullPage: true, scale: 'css', animations: 'disabled' });
@@ -308,8 +320,8 @@ async function run(engine, url) {
       previousRelease = undefined;
       await tab(player, 'records');
       await player.locator('#checkUpdate').click();
-      await player.locator('#applyUpdate').click();
-      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.12');
+      await Promise.all([player.waitForEvent('load'), player.locator('#applyUpdate').click()]);
+      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.13');
       assert.deepEqual(await saveOf(player), previousSave);
       assert.ok(await player.locator('#firstQuest').isHidden());
       if (engine === 'webkit') disconnect = true;
@@ -341,9 +353,9 @@ async function run(engine, url) {
     const initial = await saveOf(start);
     await start.locator('#firstQuest').click();
     const goals = start.locator('#goalChoices');
-    assert.equal(await goals.locator('button').count(), 6);
+    assert.equal(await goals.locator('button').count(), 10);
     const candidates = start.locator('#goalPreset');
-    assert.equal(await candidates.locator('option[value]:not([value=""])').count(), 13);
+    assert.equal(await candidates.locator('option[value]:not([value=""])').count(), 113);
     for (const [goal, stat] of [['筋トレ','strength'], ['勉強','intellect'], ['仕事','discipline'], ['美容','discipline'], ['健康','health']]) {
       await goals.getByRole('button', { name: goal, exact: true }).click();
       assert.deepEqual(await candidates.locator('optgroup').evaluateAll(groups => groups.map(g => g.label)), [goal]);
@@ -378,7 +390,7 @@ async function run(engine, url) {
     const boardPage = await boardContext.newPage();
     await boardPage.clock.install({time:new Date('2026-11-06T17:59:00+09:00')});
     await boardPage.goto(url);
-    assert.equal(await boardPage.locator('#dailyOffers button').count(),3);
+    assert.equal(await boardPage.locator('#dailyOffers button').count(),5);
     assert.ok(await boardPage.locator('#urgentOffer').isHidden());
     await setTime(boardPage, '2026-11-06T18:00:00+09:00');
     await boardPage.locator('#urgentRow button').click();
@@ -416,7 +428,12 @@ async function run(engine, url) {
     console.log(engine + ': planner scheduling, carryover, editing, deleting and persisted rewards passed');
     console.log(engine + ': daily board, 18:00 urgent offer, 20:00 reminder, overnight rotation and persisted rewards passed');
     assert.deepEqual(errors, []);
-    console.log(engine + ': first visit, five filters, draft preservation, opt-in creation, duplicate protection, mobile navigation and a single reward passed');
+    console.log(engine + ': first visit, category filters, draft preservation, opt-in creation, duplicate protection, mobile navigation and a single reward passed');
+    const habitContext = await browser.newContext({...devices['iPhone 13'], timezoneId:'Asia/Tokyo', locale:'ja-JP', acceptDownloads:true});
+    const habitPage = await habitContext.newPage();
+    await testHabits(habitPage, url, path.join(output, engine + '-habits'));
+    await habitContext.close();
+    console.log(engine + ': personalized goals, 3 difficulty stages, 7/30/90-day records, concurrent claims, backups and failed-save rollback passed');
   } finally { await browser.close(); }
 }
 

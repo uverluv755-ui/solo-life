@@ -113,19 +113,31 @@
     else render();
   }
   const renderPlans = window.SoloPlanner?.init({C, $, el, statIcon, updateSaved, recordReward, refresh:render, toast});
+  const goalSelect = $('habitGoal');
+  if (goalSelect && C.habits) {
+    for (const [id, label] of Object.entries(C.habits.categories)) goalSelect.add(new Option(label, id));
+    goalSelect.onchange = async () => {
+      const goal = goalSelect.value;
+      goalSelect.disabled = true;
+      await updateSaved(data => { data.habitGoal = goal; return true; });
+      render();
+    };
+  }
   function boardRow(q, today) {
     const done = C.boardDone(s, q.id, today);
     const row = el('div', done ? 'quest completed' : 'quest');
     row.dataset.stat = q.stat;
     const name = el('div', 'name', q.name);
     const workout = q.id === 'workout';
-    const reward = el('small', '', (workout ? '今日の筋トレ' : C.names[q.stat]) + ' · ' + q.minutes + '分 · ');
+    const category = q.key ? C.habits.categories[q.category] : workout ? '今日の筋トレ' : C.names[q.stat];
+    const difficulty = q.tier ? ' · ' + C.habits.levels[q.tier - 1] : '';
+    const reward = el('small', '', category + difficulty + ' · ' + q.minutes + '分 · ');
     reward.append(el('span', 'xp', '+' + q.xp + ' XP'));
     name.append(reward);
     const button = el('button', '', done ? '達成済み' : '達成');
     button.disabled = saveLocked || done;
     button.setAttribute('aria-label', q.name + 'を達成');
-    button.onclick = () => recordReward(button, data => C.completeBoardQuest(data, q.id, today));
+    button.onclick = () => recordReward(button, data => C.completeBoardQuest(data, q.id, today, new Date(), q.key || q.name));
     row.append(statIcon(workout ? 'workout' : q.stat), name, button);
     return row;
   }
@@ -150,6 +162,16 @@
     if (!$('todayBoard')) return;
     boardHour = now.getHours();
     const today = C.day(now), quests = C.boardQuests(s, now);
+    if (goalSelect && C.habits) {
+      goalSelect.value = s.habitGoal || 'balance';
+      goalSelect.disabled = saveLocked;
+      const {goal, tier} = C.boardSetup(s, today);
+      const label = C.habits.levels[tier - 1];
+      const next = tier === 1 ? '累計7日のクエスト達成で「習慣」へ' : tier === 2 ? '累計30日のクエスト達成で「挑戦」へ' : '3段階すべてのクエストが対象';
+      $('boardLevel').textContent = goal !== goalSelect.value
+        ? '今日は' + (C.habits.categories[goal] || 'バランス') + 'の提案です。新しい目標は明日から反映します。'
+        : '今日の段階は' + label + '。' + next + '。';
+    }
     const daily = quests.filter(q => !q.urgent), urgent = quests.find(q => q.urgent);
     $('dailyOffers').replaceChildren(...daily.map(q => boardRow(q, today)));
     $('boardCount').textContent = daily.filter(q => C.boardDone(s,q.id,today)).length + ' / ' + daily.length + ' 達成';
@@ -158,10 +180,35 @@
     if ($('trainingDays')) renderTraining(today);
     reminder?.sync();
   }
+  let period = 7;
+  function renderGrowth(today) {
+    if (!$('growthNumbers')) return;
+    const result = C.periodGrowth(s, period, today);
+    const date = key => Number(key.slice(5, 7)) + '/' + Number(key.slice(8));
+    $('growthDates').textContent = date(result.start) + ' 〜 ' + date(result.end);
+    const metrics = [['クエスト達成', result.quests, '件'], ['活動日数', result.active, '日'], ['獲得XP', result.xp, 'XP']];
+    $('growthNumbers').replaceChildren(...metrics.map(([label, value, unit]) => {
+      const item = el('div'), number = el('strong', '', value.toLocaleString('ja-JP'));
+      number.append(el('small', '', unit));
+      item.append(el('span', '', label), number);
+      return item;
+    }));
+    $('growthChange').textContent = result.change === 0 ? '前の' + period + '日間と同じ達成件数'
+      : '前の' + period + '日間より達成が' + Math.abs(result.change) + '件' + (result.change > 0 ? '増えました' : '減りました');
+    $('growthActions').textContent = 'おすすめで達成した歩行 ' + result.walk + '分 · 筋トレ ' + result.reps + '回';
+  }
+  for (const button of document.querySelectorAll('[data-period]')) {
+    button.onclick = () => {
+      period = Number(button.dataset.period);
+      for (const tab of button.parentElement.children) tab.setAttribute('aria-pressed', String(tab === button));
+      renderGrowth(C.day());
+    };
+  }
   function render() {
     const today = C.day(), g = C.growth(s.totalXp), l = g.level, p = g.xp;
     lastDay = today;
     renderBoard();
+    renderGrowth(today);
     renderPlans?.(s, today, saveLocked);
     const onHome = $('home').classList.contains('active');
     if (onHome && $('planner')) {
@@ -283,6 +330,21 @@
   $('createQuest').onclick = () => { document.querySelector('[data-tab="missions"]').click(); $('qname').focus(); };
   document.querySelector('.brand').onclick = event => { event.preventDefault(); document.querySelector('[data-tab="home"]').click(); };
   const presetSelect = $('goalPreset');
+  const habitPresets = new Map();
+  if (C.habits) {
+    for (const [id, label] of Object.entries(C.habits.categories)) {
+      let group = [...presetSelect.querySelectorAll('optgroup')].find(g => g.label === label);
+      if (!group) { group = el('optgroup'); group.label = label; presetSelect.append(group); }
+      for (const q of C.habits.catalog.filter(q => q.category === id)) {
+        if ([...group.children].some(option => option.text === q.name)) continue;
+        const key = 'habit-' + q.key;
+        const option = new Option(q.name, key);
+        option.label = C.habits.levels[q.tier - 1] + ' · ' + q.name;
+        group.append(option);
+        habitPresets.set(key, [q.stat, [20,40,80][q.tier - 1]]);
+      }
+    }
+  }
   // A v0.7 worker can still serve its earlier HTML during a network update.
   const choices = $('goalChoices');
   if (choices) {
@@ -319,7 +381,7 @@
   };
   presetSelect.onchange = () => {
     const option = presetSelect.selectedOptions[0];
-    const reward = presetRewards[option.value];
+    const reward = habitPresets.get(option.value) || presetRewards[option.value];
     if (!reward) return;
     $('qname').value = option.text;
     [$('qstat').value, $('qxp').value] = reward;

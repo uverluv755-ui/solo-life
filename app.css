@@ -436,6 +436,23 @@ input, select { background: #0e1520; border-color: #3f4f63; color: #f4eaf8; }
 #trainingDays li.trained { background: #463343; color: #ffe1cf; }
 #trainingDays b { line-height: 1.2; font-size: 13px; }
 .training-week small { color: var(--muted); font-size: 11px; }
+.board-preferences { margin: 14px 0 4px; padding: 10px 12px; background: #1b2332; border-radius: 6px; }
+.board-preferences label { margin: 0 0 5px; color: #c6d7ed; font-size: 12px; }
+.board-preferences select { margin: 0; min-height: 44px; font-size: 16px; }
+.board-preferences .note { margin: 6px 0 0; }
+.growth-period { border-top: 2px solid #afa0df; }
+#growthDates { color: #c5c3d8; font: 12px var(--mono); }
+.period-choices { display: flex; gap: 4px; margin: 14px 0; background: #171c28; padding: 3px; border-radius: 7px; }
+.period-choices button { flex: 1; min-height: 44px; background: transparent; color: #cdd2df; border: 1px solid transparent; border-radius: 5px; }
+.period-choices button[aria-pressed="true"] { color: #f4edff; background: #35314b; border-color: #716788; }
+#growthNumbers { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+#growthNumbers div { display: grid; gap: 3px; padding: 7px 0; }
+#growthNumbers span, #growthNumbers small { font-size: 11px; font-weight: 400; color: #c0c9db; }
+#growthNumbers strong { font: 600 clamp(18px,5vw,26px) var(--mono); overflow-wrap: anywhere; }
+#growthNumbers small { margin-left: 3px; }
+#growthChange { margin: 8px 0 4px; font-size: 13px; }
+#growthActions { border-top: 1px solid var(--line); padding-top: 10px; margin-bottom: 0; }
+@media (min-width: 850px) { .growth-period { grid-column: 1 / -1; } }
 .training-week button { margin-top: 10px; }
 .planner { padding-bottom: 8px; border: 1px solid #405876; border-top: 2px solid #95baff; background: linear-gradient(135deg,#1d2d46,#151e2d 75%); }
 .planner h2 { color: #f2f5ff; font-size: 19px; }

@@ -1,6 +1,6 @@
 'use strict';
-const CACHE = 'solo-life-v012-20261106-1';
-const ASSETS = ['./', './index.html', './app.css?v=0.12.0', './progress.js?v=0.12.0', './planner.js?v=0.12.0', './app.js?v=0.12.0', './reminders.js?v=0.12.0', './push-config.json?v=0.12.0', './manifest.webmanifest', './blue-flame.webp', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png'];
+const CACHE = 'solo-life-v013-20261107-1';
+const ASSETS = ['./', './index.html', './app.css?v=0.13.0', './habits.js?v=0.13.0', './progress.js?v=0.13.0', './planner.js?v=0.13.0', './app.js?v=0.13.0', './reminders.js?v=0.13.0', './push-config.json?v=0.13.0', './manifest.webmanifest', './blue-flame.webp', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png'];
 const scope = new URL(self.registration.scope);
 const assetUrls = new Set(ASSETS.map(path => new URL(path, scope).href));
 self.addEventListener('push', event => {
