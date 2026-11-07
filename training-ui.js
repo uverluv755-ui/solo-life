@@ -54,6 +54,12 @@ window.SoloTrainingUI={
       dialog.showModal();$('workoutExercise').focus();
     }
     $('startWorkout').onclick=()=>open();
+    window.addEventListener('solo-season-record',event=>{
+      const e=event.detail;if(locked||busy||!e)return;open(e.group);
+      $('workoutExercise').value=e.exercise;$('workoutMode').value=e.mode;
+      $('setRows').replaceChildren();for(let i=0;i<e.sets;i++)addSet({kg:e.mode==='bodyweight'?0:'',reps:''});
+      message('目安 '+e.sets+'セット × '+e.reps+'回。実際に行った重量と回数を入力してください。セットは減らせます。');
+    });
     $('guildWorkout').onclick=()=>open(T.advice(current).group);
     $('closeWorkout').onclick=()=>dialog.close();
     dialog.addEventListener('cancel',event=>{if(busy)event.preventDefault();});

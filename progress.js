@@ -7,6 +7,7 @@
 
   const KEY = 'solo-life-v01';
   const SCHEMA = 3;
+  const season = typeof module === 'object' && module.exports ? require('./season.js') : globalThis.SoloSeason;
   const training = typeof module === 'object' && module.exports ? require('./training.js') : globalThis.SoloTraining;
   const habits = typeof module === 'object' && module.exports ? require('./habits.js') : globalThis.SoloHabits;
   const journey = typeof module === 'object' && module.exports ? require('./journey.js') : globalThis.SoloJourney;
@@ -86,6 +87,7 @@
         !(x.focusEnd == null || nonnegative(x.focusEnd)) ||
         !(x.focusMinutes === undefined || [1, 15, 25, 45].includes(x.focusMinutes))) return false;
     if (x.training !== undefined && !training?.valid(x.training)) return false;
+    if (x.season !== undefined && !season?.valid(x.season)) return false;
     if (x.difficulty !== undefined && !difficulty?.valid(x.difficulty)) return false;
     if (x.journey !== undefined && (!journey || !journey.valid(x.journey))) return false;
     if (x.plans !== undefined && !validPlanList(x.plans, validPlan)) return false;

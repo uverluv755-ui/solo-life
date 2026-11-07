@@ -116,6 +116,7 @@
   const renderDifficulty = window.SoloDifficultyUI?.init({C,$,el,updateSaved,refresh:render,toast});
   const renderJourney = window.SoloJourneyUI?.init({C, $, el, updateSaved, refresh:render, toast});
   const renderTrainingExperience = window.SoloTrainingUI?.init({C,$,el,updateSaved,refresh:render,toast});
+  const renderSeason = window.SoloSeasonUI?.init({C,$,el,updateSaved,refresh:render,toast});
   const goalSelect = $('habitGoal');
   if (goalSelect && C.habits) {
     for (const [id, label] of Object.entries(C.habits.categories)) goalSelect.add(new Option(label, id));
@@ -217,6 +218,7 @@
     renderPlans?.(s, today, saveLocked);
     renderJourney?.(s, today, saveLocked);
     renderTrainingExperience?.(s,today,saveLocked);
+    renderSeason?.(s,today,saveLocked);
     const onHome = $('home').classList.contains('active');
     if (onHome && $('planner')) {
       $('pageTitle').textContent = new Date().toLocaleDateString('ja-JP', {month:'long', day:'numeric', weekday:'short'});

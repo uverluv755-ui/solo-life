@@ -1,9 +1,9 @@
 {
   "name": "solo-life",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "private": true,
   "scripts": {
-    "test": "node --test tests/progress.test.cjs tests/reminders.test.mjs tests/habits.test.cjs tests/journey.test.cjs tests/difficulty.test.cjs tests/training.test.cjs",
+    "test": "node --test tests/progress.test.cjs tests/reminders.test.mjs tests/habits.test.cjs tests/journey.test.cjs tests/difficulty.test.cjs tests/training.test.cjs tests/season.test.cjs",
     "test:browser": "node tests/browser.cjs",
     "test:published": "node tests/published.cjs"
   },

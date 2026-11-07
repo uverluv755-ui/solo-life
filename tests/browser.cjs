@@ -25,10 +25,11 @@ const upgradeReleases = [
   { version: 'v0.12', commit: 'c109536' },
   { version: 'v0.13', commit: '2d9f5fb' },
   { version: 'v0.14', commit: '811bc60' },
-  { version: 'v0.15', commit: '62a0ae8' }
+  { version: 'v0.15', commit: '62a0ae8' },
+  { version: 'v0.16', commit: '16306cf' }
 ].map(release => ({
   ...release,
-  files: Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js', ...(['v0.14','v0.15'].includes(release.version)?['habits.js','journey.js','journey-ui.js','planner.js','journey.css','reminders.js', ...(release.version==='v0.15'?['difficulty.js','difficulty-ui.js']:[])]:[])].map(name =>
+  files: Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js', ...(['v0.14','v0.15','v0.16'].includes(release.version)?['habits.js','journey.js','journey-ui.js','planner.js','journey.css','reminders.js', ...(['v0.15','v0.16'].includes(release.version)?['difficulty.js','difficulty-ui.js']:[]), ...(release.version==='v0.16'?['training.js','training-ui.js','training.css']:[])]:[])].map(name =>
     [name, execFileSync('git', ['show', release.commit + ':' + name], { cwd: root })]))
 }));
 const v03Files = Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name => [name, execFileSync('git', ['show', '92839fb:' + name], { cwd: root })]));
@@ -60,11 +61,11 @@ const setTime = async (page, time) => {
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
 };
 async function run(engine, url) {
-  if (['journey','difficulty','training'].includes(process.env.FLOW)) {
+  if (['journey','difficulty','training','season'].includes(process.env.FLOW)) {
     const browser = await (engine === 'webkit' ? webkit.launch() : chromium.launch({channel:process.env.CHROME_CHANNEL || 'chrome'}));
     try {
       const context = await browser.newContext({...devices['iPhone 13'], timezoneId:'Asia/Tokyo', locale:'ja-JP', acceptDownloads:true});
-      await (process.env.FLOW==='training'?require('./training-flow.cjs'):process.env.FLOW==='difficulty'?require('./difficulty-flow.cjs'):testJourney)(await context.newPage(), url, path.join(output,engine+'-'+process.env.FLOW), async offline=>{if(engine==='webkit')disconnect=offline;else await context.setOffline(offline);});
+      await (process.env.FLOW==='season'?require('./season-flow.cjs'):process.env.FLOW==='training'?require('./training-flow.cjs'):process.env.FLOW==='difficulty'?require('./difficulty-flow.cjs'):testJourney)(await context.newPage(), url, path.join(output,engine+'-'+process.env.FLOW), async offline=>{if(engine==='webkit')disconnect=offline;else await context.setOffline(offline);});
       await context.close();
       console.log(engine + ': '+process.env.FLOW+' feature, mobile layout and offline tests passed');
     } finally { await browser.close(); }
@@ -335,7 +336,7 @@ async function run(engine, url) {
       await tab(player, 'records');
       await player.locator('#checkUpdate').click();
       await Promise.all([player.waitForEvent('load'), player.locator('#applyUpdate').click()]);
-      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.16');
+      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.17');
       assert.deepEqual(await saveOf(player), previousSave);
       assert.ok(await player.locator('#firstQuest').isHidden());
       if (engine === 'webkit') disconnect = true;
@@ -457,6 +458,9 @@ async function run(engine, url) {
     const trainingContext=await browser.newContext({...devices['iPhone 13'],timezoneId:'Asia/Tokyo',locale:'ja-JP',acceptDownloads:true});
     await require('./training-flow.cjs')(await trainingContext.newPage(),url,path.join(output,engine+'-training'),async offline=>{if(engine==='webkit')disconnect=offline;else await trainingContext.setOffline(offline);});
     await trainingContext.close();
+    const seasonContext=await browser.newContext({...devices['iPhone 13'],timezoneId:'Asia/Tokyo',locale:'ja-JP',acceptDownloads:true});
+    await require('./season-flow.cjs')(await seasonContext.newPage(),url,path.join(output,engine+'-season'),async offline=>{if(engine==='webkit')disconnect=offline;else await seasonContext.setOffline(offline);});
+    await seasonContext.close();
     console.log(engine+': training sets, PB, recovery, cosmetics, concurrent edits, offline and backups passed');
     console.log(engine + ': guild, measurements, goal bosses, evolution, skills, full backup, failed saves and mobile/desktop layouts passed');
   } finally { await browser.close(); }

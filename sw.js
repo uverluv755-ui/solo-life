@@ -1,6 +1,6 @@
 'use strict';
-const CACHE = 'solo-life-v016-20261107-1';
-const ASSETS = ['./training.css?v=0.16.0', './training.js?v=0.16.0', './training-ui.js?v=0.16.0', './', './index.html', './app.css?v=0.16.0', './journey.css?v=0.16.0', './habits.js?v=0.16.0', './difficulty.js?v=0.16.0', './difficulty-ui.js?v=0.16.0', './journey.js?v=0.16.0', './journey-ui.js?v=0.16.0', './progress.js?v=0.16.0', './planner.js?v=0.16.0', './app.js?v=0.16.0', './reminders.js?v=0.16.0', './push-config.json?v=0.16.0', './manifest.webmanifest', './blue-flame.webp', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png'];
+const CACHE = 'solo-life-v017-20261107-1';
+const ASSETS = ['./season.css?v=0.17.0', './season.js?v=0.17.0', './season-ui.js?v=0.17.0', './training.css?v=0.17.0', './training.js?v=0.17.0', './training-ui.js?v=0.17.0', './', './index.html', './app.css?v=0.17.0', './journey.css?v=0.17.0', './habits.js?v=0.17.0', './difficulty.js?v=0.17.0', './difficulty-ui.js?v=0.17.0', './journey.js?v=0.17.0', './journey-ui.js?v=0.17.0', './progress.js?v=0.17.0', './planner.js?v=0.17.0', './app.js?v=0.17.0', './reminders.js?v=0.17.0', './push-config.json?v=0.17.0', './manifest.webmanifest', './blue-flame.webp', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png'];
 const scope = new URL(self.registration.scope);
 const assetUrls = new Set(ASSETS.map(path => new URL(path, scope).href));
 self.addEventListener('push', event => {

@@ -12,9 +12,10 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="stylesheet" href="./app.css?v=0.16.0">
-<link rel="stylesheet" href="./journey.css?v=0.16.0">
-<link rel="stylesheet" href="./training.css?v=0.16.0">
+<link rel="stylesheet" href="./app.css?v=0.17.0">
+<link rel="stylesheet" href="./journey.css?v=0.17.0">
+<link rel="stylesheet" href="./training.css?v=0.17.0">
+<link rel="stylesheet" href="./season.css?v=0.17.0">
 </head>
 <body>
 <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -52,7 +53,7 @@
     <svg class="brand-flame" aria-hidden="true"><use href="#stat-mind"/></svg>
     SOLO LIFE
   </a>
-  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.16</span></div>
+  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.17</span></div>
 </header>
 <div class="page-intro">
   <h1 id="pageTitle">ホーム</h1>
@@ -67,6 +68,20 @@
 <button class="primary" id="applyUpdate">最新版に更新</button>
 </aside>
 <section class="screen active" id="home" aria-label="ホーム">
+<section class="panel season-panel" id="seasonPanel" aria-labelledby="seasonTitle">
+  <div class="season-heading"><div><p class="eyebrow">THE VIOLET PILGRIMAGE</p><h2 id="seasonTitle">星霧の66日</h2><p class="season-lead">鍛錬と回復で、夜を越える。<br>あなたのペースで紡ぐ育成シーズン。</p></div><div class="season-day-wrap"><strong id="seasonDay">66</strong><small id="seasonCaption">DAYS / あなたのペースで</small></div></div>
+  <p id="seasonSetup" class="note">初心者は全身メニューから。5分割は部位別に取り組みたい人向けです。どちらも休養日を含みます。</p>
+  <details class="season-settings"><summary id="seasonSettingsTitle">自分に合う旅を選ぶ</summary><div class="season-settings-fields"><label>経験の目安<select id="seasonLevel"></select></label><label>メニュー構成<select id="seasonSplit"></select></label></div><p class="note">段階は自分で選べます。重さは指定せず、フォームを保てる負荷で。準備運動と十分なセット間の休憩を取り、痛みや不調があれば中止してください。</p><button id="seasonConfigure" class="secondary" hidden>未達成メニューに反映</button></details>
+  <button id="seasonStart" class="primary">66日の旅を始める</button>
+  <p id="seasonError" role="alert" hidden></p>
+  <div id="seasonContent" hidden>
+    <div class="season-progress-head"><span id="seasonPhase"></span><span id="seasonProgressText"></span></div><progress id="seasonProgress" max="66" value="0" aria-label="66日シーズンの達成日数"></progress>
+    <p id="seasonState" role="status"></p><h3 id="seasonMenuTitle"></h3><p id="seasonMenuMeta"></p><button id="seasonToday" class="text-button" hidden>現在のDAYへ戻る</button>
+    <p id="seasonGuidance" class="season-guidance"></p><div id="seasonItems" class="season-items"></div>
+    <div class="season-actions"><button id="seasonComplete" class="primary">今日の取り組みを完了</button><button id="seasonRest" class="secondary">今日は休養に切り替える</button></div><p id="seasonCompletionHint" class="note"></p>
+    <details class="season-map-details"><summary>66日の旅路を見る</summary><p class="note">塗りつぶしは達成済み、点線は休養の予定。日を選ぶとメニューを確認できます。</p><div id="seasonMap" class="season-map"></div></details><p id="seasonArchive" class="note"></p>
+  </div>
+</section>
 <section class="panel training-hero" id="trainingHero" aria-labelledby="forgeHeading">
   <div class="forge-heading"><div><p class="eyebrow">THE EMBER FORGE</p><h2 id="forgeHeading">鍛えて、物語を刻む。</h2></div><b class="forge-level" id="trainingLevel"></b></div>
   <div class="forge-scene">
@@ -414,7 +429,7 @@
 <input type="file" id="import" accept="application/json,.json">
 <p class="note">旧バージョンのバックアップも読み込めます。過去の記録は保存されている範囲で復元します。端末間の自動同期には対応していません。</p>
 <button class="secondary" id="checkUpdate">更新を確認</button>
-<p class="note" id="appVersion">SOLO LIFE v0.16 · build 0.16.0</p>
+<p class="note" id="appVersion">SOLO LIFE v0.16 · build 0.17.0</p>
 </div>
 </section>
 <section class="screen" id="journey" aria-label="育成">
@@ -503,18 +518,20 @@
   <button class="primary" id="continueGrowth" autofocus>閉じる</button>
 </div>
 </dialog>
-<script src="./habits.js?v=0.16.0"></script>
-<script src="./difficulty.js?v=0.16.0"></script>
-<script src="./difficulty-ui.js?v=0.16.0"></script>
-<script src="./journey.js?v=0.16.0"></script>
-<script src="./training.js?v=0.16.0"></script>
-<script src="./progress.js?v=0.16.0">
+<script src="./habits.js?v=0.17.0"></script>
+<script src="./difficulty.js?v=0.17.0"></script>
+<script src="./difficulty-ui.js?v=0.17.0"></script>
+<script src="./journey.js?v=0.17.0"></script>
+<script src="./training.js?v=0.17.0"></script>
+<script src="./season.js?v=0.17.0"></script>
+<script src="./progress.js?v=0.17.0">
 </script>
-<script src="./reminders.js?v=0.16.0"></script>
-<script src="./planner.js?v=0.16.0"></script>
-<script src="./journey-ui.js?v=0.16.0"></script>
-<script src="./training-ui.js?v=0.16.0"></script>
-<script src="./app.js?v=0.16.0">
+<script src="./reminders.js?v=0.17.0"></script>
+<script src="./planner.js?v=0.17.0"></script>
+<script src="./journey-ui.js?v=0.17.0"></script>
+<script src="./training-ui.js?v=0.17.0"></script>
+<script src="./season-ui.js?v=0.17.0"></script>
+<script src="./app.js?v=0.17.0">
 </script>
 </body>
 </html>
