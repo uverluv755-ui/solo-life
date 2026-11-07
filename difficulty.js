@@ -57,7 +57,7 @@
   function trainedRecently(s,today) {
     const prior=new Date(today+'T12:00:00');prior.setDate(prior.getDate()-1);
     return [today,localDay(prior)].some(day=>{
-      const d=s.daily[day];return d?.trained||d?.trainingOfferDone||d?.planLog?.some(p=>p.stat==='strength')||s.quests.some(q=>q.stat==='strength'&&d?.questIds.includes(q.id));
+      const d=s.daily[day];return (s.training?.sessions||[]).some(r=>r.day===day)||d?.trained||d?.trainingOfferDone||d?.planLog?.some(p=>p.stat==='strength')||s.quests.some(q=>q.stat==='strength'&&d?.questIds.includes(q.id));
     });
   }
   function suggestion(s,c,today,mode='normal') {

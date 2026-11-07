@@ -75,7 +75,7 @@
     const trained = d => !!(d?.trained || d?.trainingOfferDone || d?.planLog?.some(p=>p.stat==='strength') || d?.questIds.some(id=>strengthIds.has(id)));
     const trainedRecently = trained(done) || (() => {
       const previous = new Date(today+'T12:00:00'); previous.setDate(previous.getDate()-1);
-      return trained(s.daily[day(previous)]);
+      return trained(s.daily[day(previous)]) || (s.training?.sessions||[]).some(r=>r.day>=day(previous)&&r.day<=today);
     })();
     const maxTier = mode==='normal' ? (active.filter(d=>d<today).length>=30?3:active.filter(d=>d<today).length>=7?2:1) : 1;
     if (mode==='rest') return {mode,quests:[],message:'今日は休養を選びました。行動の提案はお休みです。目標ボスの進捗と習得スキルはそのまま残ります。',active:recent.filter(([,d])=>d.quests||d.focus).length};

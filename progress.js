@@ -7,6 +7,7 @@
 
   const KEY = 'solo-life-v01';
   const SCHEMA = 3;
+  const training = typeof module === 'object' && module.exports ? require('./training.js') : globalThis.SoloTraining;
   const habits = typeof module === 'object' && module.exports ? require('./habits.js') : globalThis.SoloHabits;
   const journey = typeof module === 'object' && module.exports ? require('./journey.js') : globalThis.SoloJourney;
   const difficulty = typeof module === 'object' && module.exports ? require('./difficulty.js') : globalThis.SoloDifficulty;
@@ -84,6 +85,7 @@
         !Array.isArray(x.history) || !x.history.every(h => record(h) && typeof h.label === 'string' && nonnegative(h.xp) && timestamp(h.at)) ||
         !(x.focusEnd == null || nonnegative(x.focusEnd)) ||
         !(x.focusMinutes === undefined || [1, 15, 25, 45].includes(x.focusMinutes))) return false;
+    if (x.training !== undefined && !training?.valid(x.training)) return false;
     if (x.difficulty !== undefined && !difficulty?.valid(x.difficulty)) return false;
     if (x.journey !== undefined && (!journey || !journey.valid(x.journey))) return false;
     if (x.plans !== undefined && !validPlanList(x.plans, validPlan)) return false;
@@ -219,7 +221,7 @@
     const urgentPool = urgentChoices.filter(choice => !daily.some(q => q.stat === choice[1]));
     const urgent = entry('urgent', pick(urgentPool.length ? urgentPool : urgentChoices, sequence));
     const activity = s.daily[today];
-    if (boardDone(s, urgent.id, today) || (journey?.fatigue(s, today) !== 'rest' && now.getHours() >= 18 && !activity?.quests && !activity?.focus && s.focusEnd == null)) daily.push(urgent);
+    if (boardDone(s, urgent.id, today) || (journey?.fatigue(s, today) !== 'rest' && !s.training?.careDays.includes(today) && now.getHours() >= 18 && !activity?.quests && !activity?.focus && s.focusEnd == null)) daily.push(urgent);
     return daily;
   }
   function boardSetup(s, today = day()) {
@@ -268,7 +270,7 @@
     });
     const urgent = legacy.find(q => q.urgent);
     const mode=journey?.fatigue(s,today)||'normal';
-    const visible = s.difficulty ? daily.filter(q=>locked.has(q.id) || (mode!=='rest' &&
+    const visible = (s.difficulty || s.training) ? daily.filter(q=>locked.has(q.id) || (mode!=='rest' &&
       (mode!=='tired' || (!['strength','walk'].includes(q.category)&&q.minutes<=2)) &&
       (mode!=='light' || q.minutes<=3) && !(q.category==='strength'&&difficulty.trainedRecently(s,today)))) : daily;
     return urgent ? [...visible, urgent] : visible;

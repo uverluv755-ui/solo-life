@@ -12,8 +12,9 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="stylesheet" href="./app.css?v=0.15.0">
-<link rel="stylesheet" href="./journey.css?v=0.15.0">
+<link rel="stylesheet" href="./app.css?v=0.16.0">
+<link rel="stylesheet" href="./journey.css?v=0.16.0">
+<link rel="stylesheet" href="./training.css?v=0.16.0">
 </head>
 <body>
 <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -51,7 +52,7 @@
     <svg class="brand-flame" aria-hidden="true"><use href="#stat-mind"/></svg>
     SOLO LIFE
   </a>
-  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.15</span></div>
+  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.16</span></div>
 </header>
 <div class="page-intro">
   <h1 id="pageTitle">ホーム</h1>
@@ -66,14 +67,52 @@
 <button class="primary" id="applyUpdate">最新版に更新</button>
 </aside>
 <section class="screen active" id="home" aria-label="ホーム">
+<section class="panel training-hero" id="trainingHero" aria-labelledby="forgeHeading">
+  <div class="forge-heading"><div><p class="eyebrow">THE EMBER FORGE</p><h2 id="forgeHeading">鍛えて、物語を刻む。</h2></div><b class="forge-level" id="trainingLevel"></b></div>
+  <div class="forge-scene">
+    <div class="forge-copy"><p class="eyebrow" id="forgeTitle"></p><h3 id="forgeStatus"></h3><p id="forgeNext"></p><p id="trainingXp"></p></div>
+    <svg class="forge-portrait" viewBox="0 0 260 330" role="img" aria-label="鍛えた部位の装具が光る、オリジナルの星鉄の守護者">
+      <defs><linearGradient id="forgePlate" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#71899c"/><stop offset=".35" stop-color="#2f4259"/><stop offset="1" stop-color="#111b2c"/></linearGradient><linearGradient id="forgeLit" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#d0f0ff"/><stop offset=".4" stop-color="#619ab7"/><stop offset="1" stop-color="#253c63"/></linearGradient><radialGradient id="forgeAura"><stop stop-color="#6f9dcb" stop-opacity=".32"/><stop offset="1" stop-color="#253c63" stop-opacity="0"/></radialGradient></defs>
+      <ellipse cx="130" cy="175" rx="126" ry="150" fill="url(#forgeAura)"/>
+      <circle class="forge-ring" cx="130" cy="145" r="109"/><circle class="forge-ring" cx="130" cy="145" r="96"/>
+      <path class="forge-ring" d="M20 145H240M130 30V260M53 68 207 222M53 222 207 68"/>
+      <path fill="#17202f" stroke="#5c6378" d="M95 112 64 133 24 292 108 311 130 284 154 311 236 292 195 133 165 112Z"/>
+      <path data-armor="back" class="armor" d="M68 128 44 143 31 274 67 263 86 159M192 128 216 143 229 274 193 263 174 159"/>
+      <path data-armor="legs" class="armor" d="M86 224 126 232 119 291 87 300 76 282ZM134 232 174 224 184 282 173 300 141 291Z"/>
+      <path data-armor="chest" class="armor" d="M88 121 115 109 130 126 145 109 172 121 181 166 153 192 130 201 107 192 79 166Z"/>
+      <path data-armor="shoulders" class="armor" d="M87 118 57 117 36 144 64 166 88 150 101 128ZM173 118 203 117 224 144 196 166 172 150 159 128Z"/>
+      <path data-armor="arms" class="armor" d="M56 169 76 175 69 217 50 236 38 220ZM204 169 184 175 191 217 210 236 222 220Z"/>
+      <path data-armor="core" class="armor" d="M104 188 130 202 156 188 168 224 130 246 92 224Z"/>
+      <path fill="#35475e" stroke="#8da2b7" d="M103 52 130 39 157 52 167 83 152 112 130 124 108 112 93 83Z"/>
+      <path fill="#182639" stroke="#8da2b7" d="M130 39 140 65 159 74 149 96 130 119 111 96 101 74 120 65Z"/>
+      <path fill="none" stroke="#c3edff" stroke-width="3" d="M107 79 122 84M138 84 153 79"/>
+      <path fill="none" stroke="#adc5db" d="M130 127V182M93 142 120 156M167 142 140 156M105 210 130 223 155 210"/>
+      <path fill="#d7bc82" d="M130 144 139 162 130 181 121 162Z"/>
+      <path class="forge-crown" d="M100 47 94 22 117 34 130 9 143 34 166 22 160 47 130 35Z"/>
+      <path fill="none" stroke="#d7bc8266" d="M72 305H188M90 313H170"/>
+    </svg>
+  </div>
+  <div class="forge-summary"><div><small>直近7日 · 筋トレ実測</small><strong id="realDays">0日</strong></div><div><small>直近7日 · 記録セット</small><strong id="realSets">0セット</strong></div><div><small>遠征 · 休養も含む</small><strong id="forgeDays">0日</strong></div></div>
+  <div class="forge-actions"><button class="primary" id="startWorkout">＋ 筋トレを記録</button><button class="secondary" id="restTraining">今日は休養を記録</button></div>
+  <p class="note">筋トレと休養、どちらも1日1歩。実測の保存はXPを増やしません。装具の光は部位の記録、称号は遠征日数を表します。</p>
+  <p class="training-receipt" id="trainingReceipt" role="status" hidden></p>
+</section>
+<section class="panel training-journey" aria-labelledby="muscleTitle">
+  <div class="section-head"><h2 id="muscleTitle">身体の冒険地図</h2><span class="counter">直近7日</span></div>
+  <p class="note">部位をタップすると、実測の履歴と自己ベストへ。</p>
+  <div class="muscle-map" id="muscleMap"></div>
+  <button class="text-button" id="viewTraining">すべての筋トレ記録を見る →</button>
+  <div class="forge-boss"><p class="eyebrow">EXPEDITION / 回復も力に</p><div class="section-head"><h3 id="forgeBossName"></h3><span id="forgeBossCount"></span></div><div class="bar" id="forgeBossBar" role="progressbar" aria-label="遠征ボスへの進捗" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0"><div class="fill" id="forgeBossFill"></div></div><p id="forgeBossHint"></p><small class="note">筋トレまたは休養を記録した日が1ダメージ。休んでも後戻りしません。獲得した歩み・称号は実測の訂正後も残ります。</small><div class="forge-titles" id="forgeTitles"></div></div>
+</section>
 <section class="panel guild-panel" aria-labelledby="guildTitle">
   <div class="guild-heading"><div class="guild-sigil" aria-hidden="true">✧</div><div><p class="eyebrow">THE QUIET COMPASS</p><h2 id="guildTitle">ギルドマスター</h2><span class="rule-badge">無料 · ルールベース · AI不使用</span></div></div>
   <p id="guildMessage" class="guild-message" aria-live="polite"></p>
   <div class="guild-checkin"><label for="guildFatigue">今日の調子</label><select id="guildFatigue"><option value="normal">いつもどおり</option><option value="light">軽めにしたい</option><option value="tired">疲れが強い</option><option value="rest">今日は休養する</option></select></div>
   <p id="guildEvidence" class="note"></p>
+  <div class="training-advice"><label for="trainingGoal">身体づくりの目標</label><select id="trainingGoal"></select><h3 id="trainingAdviceTitle"></h3><p id="trainingAdviceText"></p><p class="note" id="trainingEvidence"></p><button class="secondary" id="guildWorkout">記録を開く</button><p class="note">部位と自己申告からの候補です。回復の判定ではありません。痛みや不調がある日は中止・休養してください。</p></div>
   <div id="difficultyAdvice"></div>
   <div id="guildSuggestions"></div>
-  <details class="guild-about"><summary>提案のしくみ</summary><p class="note">100種類のクエストから、毎日の目標・達成記録・今日の自己申告に合わせて候補を選びます。自由会話をするAIではありません。提案は端末内で処理し、追加料金や外部AI APIは使いません。体調の診断は行いません。つらいときは休養を優先できます。</p></details>
+  <details class="guild-about"><summary>提案のしくみ</summary><p class="note">クエストの候補と筋トレ記録から、目標・達成記録・今日の自己申告に合わせて提案します。自由会話をするAIではありません。提案は端末内で処理し、追加料金や外部AI APIは使いません。体調の診断は行いません。つらいときは休養を優先できます。</p></details>
 </section>
 <section class="panel planner" id="planner" aria-labelledby="planTitle">
   <div class="section-head"><h2 id="planTitle">今日の予定</h2><span id="planCount" aria-live="polite"></span></div>
@@ -318,6 +357,12 @@
 </div>
 </section>
 <section class="screen" id="records" aria-label="成長記録">
+<section class="panel training-records" id="trainingRecords" aria-labelledby="trainingRecordsTitle">
+  <p class="eyebrow">YOUR PERSONAL RECORDS</p><div class="section-head"><h2 id="trainingRecordsTitle">筋トレの軌跡</h2><span class="counter" id="trainingRecordCount"></span></div>
+  <p class="note">実測の自己ベスト。ゲームの能力値やXPから身体の変化を推定しません。部位・種目名・負荷の種類が同じ記録を比較します。</p>
+  <label for="trainingFilter">部位で絞り込む</label><select id="trainingFilter"><option value="all">すべての部位</option></select>
+  <div class="personal-bests" id="personalBests"></div><div id="trainingHistory"></div><button class="secondary" id="trainingMore" hidden>過去の筋トレ記録をもっと見る</button>
+</section>
 <section class="panel body-panel" aria-labelledby="bodyTitle">
   <p class="eyebrow">REAL WORLD JOURNAL</p>
   <div class="section-head"><h2 id="bodyTitle">身体の実測記録</h2><span id="bodyCount"></span></div>
@@ -369,7 +414,7 @@
 <input type="file" id="import" accept="application/json,.json">
 <p class="note">旧バージョンのバックアップも読み込めます。過去の記録は保存されている範囲で復元します。端末間の自動同期には対応していません。</p>
 <button class="secondary" id="checkUpdate">更新を確認</button>
-<p class="note" id="appVersion">SOLO LIFE v0.15 · build 0.15.0</p>
+<p class="note" id="appVersion">SOLO LIFE v0.16 · build 0.16.0</p>
 </div>
 </section>
 <section class="screen" id="journey" aria-label="育成">
@@ -425,6 +470,22 @@
 </button>
 <button data-tab="journey" aria-pressed="false" aria-controls="journey"><svg class="icon" aria-hidden="true"><use href="#stat-mind"/></svg><span>育成</span></button>
 </nav>
+<dialog id="workoutDialog" class="workout-dialog" aria-labelledby="workoutDialogTitle">
+  <div class="section-head"><div><p class="eyebrow">TRAINING LOG / 実測</p><h2 id="workoutDialogTitle">今日のトレーニング</h2></div><button id="closeWorkout" aria-label="記録画面を閉じる" type="button">×</button></div>
+  <form id="workoutForm">
+    <div class="workout-fields"><label>日付<input id="workoutDate" type="date" required></label><label>部位<select id="workoutGroup"></select></label></div>
+    <label>種目<input id="workoutExercise" list="exerciseNames" maxlength="60" placeholder="例：ベンチプレス" required autocomplete="off"></label><datalist id="exerciseNames"></datalist>
+    <label>負荷の種類<select id="workoutMode"><option value="weighted">重量（外部負荷）</option><option value="bodyweight">自重</option></select></label>
+    <p class="note">ダンベルの片手／合計やマシンの違いは種目名に含め、同じ条件で比較しましょう。時間の記録は「記録」の従来フォームへ。</p>
+    <button type="button" class="secondary" id="copyLast">この部位・種目の前回を入力</button>
+    <div class="set-header"><span>SET</span><span>重量 kg</span><span>回数</span><span></span></div><div id="setRows"></div>
+    <button type="button" class="secondary" id="addSet">＋ セットを追加（前の値を複製）</button>
+    <label>トレーニング後の疲労<select id="workoutFatigue"><option value="easy">余裕あり</option><option value="moderate">ちょうどよい</option><option value="hard">疲れが強い</option></select></label>
+    <p id="workoutError" role="alert" hidden></p>
+    <button type="submit" class="primary" id="workoutSubmit">記録を保存</button>
+    <p class="note">実際に行った内容だけを保存。ゲームXPは変わりません。</p>
+  </form>
+</dialog>
 <dialog id="awakening" class="awakening" aria-labelledby="awakeningTitle" aria-describedby="levelTransition awakeningText awardDetail">
 <div class="award-scene">
   <div class="flame-field" aria-hidden="true">
@@ -442,16 +503,18 @@
   <button class="primary" id="continueGrowth" autofocus>閉じる</button>
 </div>
 </dialog>
-<script src="./habits.js?v=0.15.0"></script>
-<script src="./difficulty.js?v=0.15.0"></script>
-<script src="./difficulty-ui.js?v=0.15.0"></script>
-<script src="./journey.js?v=0.15.0"></script>
-<script src="./progress.js?v=0.15.0">
+<script src="./habits.js?v=0.16.0"></script>
+<script src="./difficulty.js?v=0.16.0"></script>
+<script src="./difficulty-ui.js?v=0.16.0"></script>
+<script src="./journey.js?v=0.16.0"></script>
+<script src="./training.js?v=0.16.0"></script>
+<script src="./progress.js?v=0.16.0">
 </script>
-<script src="./reminders.js?v=0.15.0"></script>
-<script src="./planner.js?v=0.15.0"></script>
-<script src="./journey-ui.js?v=0.15.0"></script>
-<script src="./app.js?v=0.15.0">
+<script src="./reminders.js?v=0.16.0"></script>
+<script src="./planner.js?v=0.16.0"></script>
+<script src="./journey-ui.js?v=0.16.0"></script>
+<script src="./training-ui.js?v=0.16.0"></script>
+<script src="./app.js?v=0.16.0">
 </script>
 </body>
 </html>

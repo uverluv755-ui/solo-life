@@ -1,0 +1,42 @@
+/* The Ember Forge: original plate geometry, moon-gold and glacier-blue light. */
+.training-hero{position:relative;isolation:isolate;overflow:hidden;padding:24px 22px 20px;border-color:#77624c;background:radial-gradient(ellipse at 80% 32%,#43578355,transparent 55%),linear-gradient(140deg,#1e2434,#10151e 70%);}
+.training-hero::before{content:"";position:absolute;inset:8px;border:1px solid #dac28e22;pointer-events:none;z-index:-1;}
+.training-hero .eyebrow{color:#d8be85;letter-spacing:.18em;font-size:10px;}
+.forge-heading{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.forge-heading h2{font-size:23px;letter-spacing:.05em;margin:4px 0 0;}
+.forge-level{font:26px Georgia,serif;color:#e9d2a4;white-space:nowrap;}
+.forge-scene{display:grid;grid-template-columns:minmax(0,1fr) 53%;align-items:center;min-height:230px;position:relative;}
+.forge-copy{z-index:1;margin-right:-30px;}
+.forge-copy h3{font-size:22px;line-height:1.65;font-weight:500;max-width:230px;margin:15px 0;}
+.forge-copy p{font-size:11px;line-height:1.9;color:#b8c4d8;max-width:185px;}
+.forge-portrait{width:100%;max-height:280px;filter:drop-shadow(0 0 17px #67a9ed22);overflow:visible;}
+.forge-portrait .armor{fill:url(#forgePlate);stroke:#8296ac;stroke-width:1;transition:fill .5s,filter .5s;}
+.forge-portrait .armor.forged{fill:url(#forgeLit);stroke:#bce9fa;filter:drop-shadow(0 0 4px #89cfff77);}
+.forge-ring{fill:none;stroke:#c8a76e44;stroke-width:1;}
+.forge-crown{opacity:0;fill:#ead09b;transition:opacity .5s;}
+[data-forge="dawn"] .forge-crown,[data-forge="star"] .forge-crown{opacity:1;}
+[data-forge="steel"] .forge-portrait,[data-forge="dawn"] .forge-portrait{filter:drop-shadow(0 0 18px #6bb3ff55);}
+[data-forge="star"] .forge-portrait{filter:drop-shadow(0 0 22px #e3c18a66);}
+.forge-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;border-top:1px solid #68718b55;border-bottom:1px solid #68718b55;padding:12px 0;}
+.forge-summary div{display:grid;gap:5px;}.forge-summary small{font-size:10px;color:#aebdd0;}.forge-summary strong{font-size:18px;color:#e5edf8;font-weight:500;}
+.forge-actions{display:grid;grid-template-columns:1.3fr 1fr;gap:9px;align-items:stretch;}.forge-actions button{margin:15px 0 0;min-height:52px;font-size:12px;}
+.forge-actions .primary{background:linear-gradient(100deg,#d4b680,#f0dbad);border-color:#ecd4a3;color:#211c19;}
+.training-hero>.note{font-size:10px;margin:11px 0 0;}.training-receipt{background:#273e42;border:1px solid #7aada2;border-radius:6px;padding:12px;font-size:12px;line-height:1.8;}
+.training-spark .forge-portrait{animation:forge-spark 1.2s ease-out;}@keyframes forge-spark{40%{filter:drop-shadow(0 0 28px #c6e9ff);transform:translateY(-4px)}}
+.training-journey{background:linear-gradient(145deg,#1b2030,#111923);}
+.training-journey h2{font-size:18px;}.muscle-map{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:14px 0;}
+.muscle-tile{display:flex;flex-direction:column;gap:7px;align-items:flex-start;min-height:87px;padding:12px 10px;background:#141d2c;color:#aeb9ca;border:1px solid #35455c;border-radius:6px;min-width:0;}
+.muscle-tile strong{font-size:14px;}.muscle-tile b{font-size:17px;font-weight:400;}.muscle-tile small{font-size:9px;text-align:left;}.muscle-tile.trained{border-color:#648da4;background:linear-gradient(130deg,#29435277,#152130);color:#dceef5;}
+.forge-boss{position:relative;padding:17px;margin-top:20px;background:radial-gradient(ellipse at right,#64506f44,transparent 70%),#171622;border:1px solid #6c557c;border-radius:7px;}
+.forge-boss h3{font-size:16px;}.forge-boss .section-head{align-items:center;gap:8px;}.forge-boss .section-head span{font-size:12px;white-space:nowrap;color:#d8c1ec;}
+.forge-boss .fill{background:linear-gradient(90deg,#715a9b,#c5a6d8);}.forge-boss p{font-size:11px;color:#d1c1df;}.forge-titles{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;}.forge-titles span{padding:6px 8px;border:1px solid #3c3d4c;border-radius:4px;font-size:9px;color:#a4a7b3;}.forge-titles .earned{color:#e9d2a2;border-color:#8e7950;background:#65532a22;}
+.training-advice{margin:18px 0;padding:14px;background:#101725;border-left:2px solid #bdad88;}.training-advice h3{font-size:16px;color:#e4d3b3;line-height:1.7;}.training-advice p{font-size:12px;line-height:1.85;}.training-advice .note{font-size:10px;}
+.workout-dialog{width:calc(100% - 20px);max-width:520px;max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom));padding:20px;border:1px solid #927f60;border-radius:12px;background:#121b29;color:#e6edf8;overscroll-behavior:contain;}
+.workout-dialog::backdrop{background:#05070fce;backdrop-filter:blur(6px);}.workout-dialog h2{font-size:21px;}.workout-dialog .section-head button{min-height:44px;min-width:44px;border:1px solid #536176;color:#dae5f5;background:#202b3d;font-size:22px;border-radius:6px;}
+.workout-dialog label{font-size:12px;color:#c7d1e1;display:block;}.workout-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;}.workout-dialog input,.workout-dialog select{min-width:0;max-width:100%;}
+.set-header,.set-row{display:grid;grid-template-columns:26px minmax(0,1fr) minmax(0,1fr) 44px;gap:8px;align-items:center;}.set-header{font-size:11px;color:#aebdd0;margin-top:20px;}.set-row b{font:18px Georgia,serif;color:#d9c494;text-align:center;}.set-row input{margin:5px 0;}.set-remove{min-height:44px;border:1px solid #536176;background:#202b3d;color:#d8e3f4;font-size:20px;border-radius:4px;}.set-row input:disabled{opacity:.5;}
+#workoutError{font-size:12px;color:#ffd6a2;line-height:1.8;}.training-records{min-width:0;}.training-records .section-head{gap:8px;}.training-records select{max-width:200px;}.personal-bests{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:18px 0;}.personal-best{padding:15px;background:#121d2b;border:1px solid #456079;border-radius:7px;min-width:0;overflow-wrap:anywhere;}.personal-best h3{font-size:15px;margin:8px 0;}.pb-value{display:block;font:25px Georgia,serif;color:#d7edff;margin:10px 0;}.personal-best>small{display:block;font-size:10px;}.pb-trend{display:flex;gap:6px;align-items:flex-end;margin:18px 0 6px;}.pb-point{display:flex;flex:1;flex-direction:column;align-items:center;min-width:0;gap:5px;}.pb-point b,.pb-point small{font-size:9px;font-weight:400;}.pb-point i{display:block;width:12px;max-width:100%;background:linear-gradient(#a6d7eb,#4d709e);border-radius:3px 3px 0 0;}
+.training-log{display:grid;grid-template-columns:minmax(0,1fr) 48px;gap:12px;align-items:center;border-top:1px solid #38455c;padding:16px 0;overflow-wrap:anywhere;}.training-log h3{font-size:15px;margin:6px 0;}.training-log p{font-size:12px;line-height:1.9;margin:5px 0;}.training-log small{font-size:10px;color:#b4c1d3;}.training-log-actions button{margin:0;min-height:44px;padding:7px;}.training-log-actions{display:grid;gap:3px;}
+@media(min-width:850px){#home.active{grid-template-areas:"forge muscles" "guild player" "planner player" "board player" "quests player";}.training-hero{grid-area:forge;margin:0;height:100%;}.training-journey{grid-area:muscles;margin:0;height:100%;}.forge-scene{min-height:310px;}.forge-portrait{max-height:330px;}.forge-copy h3{font-size:28px;}#trainingRecords{grid-column:1/-1;}.personal-bests{grid-template-columns:repeat(3,minmax(0,1fr));}}
+@media(max-width:360px){.training-hero{padding:18px 16px;}.forge-copy h3{font-size:19px;}.forge-heading h2{font-size:18px;}.forge-summary strong{font-size:15px;}.forge-actions{grid-template-columns:1fr;gap:0;}.forge-actions button{margin-top:10px;}.workout-dialog{padding:15px;}}
+@media(prefers-reduced-motion:reduce){.training-spark .forge-portrait{animation:none;}.forge-portrait,.forge-portrait .armor,.forge-crown{transition:none;}}

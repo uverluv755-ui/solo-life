@@ -9,6 +9,7 @@ module.exports=async(page,url,prefix,setOffline=value=>page.context().setOffline
   await page.waitForFunction(()=>!!navigator.serviceWorker.controller);
   await page.getByRole('button',{name:'実力に合わせて難易度を選ぶ'}).click();
   await page.locator('#difficulty-study').selectOption('B');await page.locator('#habitGoal').selectOption('study');
+  await page.waitForFunction(()=>{const s=JSON.parse(localStorage.getItem('solo-life-v01'));return s.habitGoal==='study'&&s.difficulty?.levels.study==='B';});
   await page.waitForFunction(()=>document.querySelector('#dailyOffers').textContent.includes('60分'));
   const row=page.locator('#dailyOffers .quest').filter({hasText:'勉強 · B'}).first();
   const name=await row.locator('.name').evaluate(e=>e.firstChild.textContent);
