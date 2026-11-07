@@ -1,6 +1,6 @@
 'use strict';
-const CACHE = 'solo-life-v014-20261107-1';
-const ASSETS = ['./', './index.html', './app.css?v=0.14.0', './journey.css?v=0.14.0', './habits.js?v=0.14.0', './journey.js?v=0.14.0', './journey-ui.js?v=0.14.0', './progress.js?v=0.14.0', './planner.js?v=0.14.0', './app.js?v=0.14.0', './reminders.js?v=0.14.0', './push-config.json?v=0.14.0', './manifest.webmanifest', './blue-flame.webp', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png'];
+const CACHE = 'solo-life-v015-20261107-1';
+const ASSETS = ['./', './index.html', './app.css?v=0.15.0', './journey.css?v=0.15.0', './habits.js?v=0.15.0', './difficulty.js?v=0.15.0', './difficulty-ui.js?v=0.15.0', './journey.js?v=0.15.0', './journey-ui.js?v=0.15.0', './progress.js?v=0.15.0', './planner.js?v=0.15.0', './app.js?v=0.15.0', './reminders.js?v=0.15.0', './push-config.json?v=0.15.0', './manifest.webmanifest', './blue-flame.webp', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png'];
 const scope = new URL(self.registration.scope);
 const assetUrls = new Set(ASSETS.map(path => new URL(path, scope).href));
 self.addEventListener('push', event => {

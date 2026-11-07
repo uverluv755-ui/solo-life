@@ -111,7 +111,8 @@ window.SoloPlanner = {
         const row = planRow(p, schedule(p, today) + ' · +20 XP');
         const button = el('button', '', '完了');
         button.setAttribute('aria-label', '完了：' + p.name);
-        button.disabled = locked;
+        button.disabled = locked || C.difficulty.claimed(s,p,today);
+        if(C.difficulty.claimed(s,p,today)) button.textContent='本日報酬済み';
         button.onclick = () => recordReward(button, data => C.completePlan(data, p.id, today));
         row.append(button);
         return row;

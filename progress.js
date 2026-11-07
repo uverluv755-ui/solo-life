@@ -9,6 +9,7 @@
   const SCHEMA = 3;
   const habits = typeof module === 'object' && module.exports ? require('./habits.js') : globalThis.SoloHabits;
   const journey = typeof module === 'object' && module.exports ? require('./journey.js') : globalThis.SoloJourney;
+  const difficulty = typeof module === 'object' && module.exports ? require('./difficulty.js') : globalThis.SoloDifficulty;
   const boardSlots = ['workout','a','b','c','d','e'];
   const validGoal = goal => goal === 'balance' || (habits ? Object.hasOwn(habits.categories, goal) : safeId(goal));
   // v0.4 changes presentation, not the save schema or the 100 XP level curve.
@@ -83,6 +84,7 @@
         !Array.isArray(x.history) || !x.history.every(h => record(h) && typeof h.label === 'string' && nonnegative(h.xp) && timestamp(h.at)) ||
         !(x.focusEnd == null || nonnegative(x.focusEnd)) ||
         !(x.focusMinutes === undefined || [1, 15, 25, 45].includes(x.focusMinutes))) return false;
+    if (x.difficulty !== undefined && !difficulty?.valid(x.difficulty)) return false;
     if (x.journey !== undefined && (!journey || !journey.valid(x.journey))) return false;
     if (x.plans !== undefined && !validPlanList(x.plans, validPlan)) return false;
     if (x.habitGoal !== undefined && !validGoal(x.habitGoal)) return false;
@@ -91,8 +93,9 @@
     return record(x.daily) && Object.entries(x.daily).every(([d, v]) => validDay(d) && record(v) &&
       count(v.quests) && count(v.focus) && nonnegative(v.xp) && Array.isArray(v.questIds) &&
       (v.boardSetup === undefined || (record(v.boardSetup) && validGoal(v.boardSetup.goal) && [1,2,3].includes(v.boardSetup.tier))) &&
+      (v.catalogLog === undefined || (difficulty?.validLog(v.catalogLog) && v.catalogLog.length <= v.quests)) &&
       (v.habitLog === undefined || (Array.isArray(v.habitLog) && v.habitLog.length <= v.quests &&
-        v.habitLog.every(h => record(h) && boardSlots.includes(h.slot) && safeId(h.key) && (!habits || habits.byKey.has(h.key))) &&
+        v.habitLog.every(h => record(h) && boardSlots.includes(h.slot) && safeId(h.key) && (!habits || difficulty.byKey.has(h.key))) &&
         new Set(v.habitLog.map(h => h.slot)).size === v.habitLog.length &&
         new Set(v.habitLog.map(h => h.key)).size === v.habitLog.length)) &&
       [v.trainingOfferDone, v.trained, v.trainingRewardClaimed].every(flag => flag === undefined || typeof flag === 'boolean') &&
@@ -233,7 +236,7 @@
     const categories = ['strength'];
     if (goal !== 'balance') {
       if (goal !== 'strength') categories.push(goal);
-      categories.push(goal);
+      if(!s.difficulty) categories.push(goal);
     }
     const size = tier === 1 ? 5 : 6;
     for (let i = 0; categories.length < size; i++) {
@@ -245,13 +248,16 @@
     for (const q of legacy.filter(q => !q.urgent)) {
       if (boardDone(s, q.id, today) && !log.some(h => h.slot === q.id)) locked.set(q.id, q);
     }
-    for (const h of log) locked.set(h.slot, {...habits.byKey.get(h.key), id:h.slot, xp:20});
+    for (const h of log) locked.set(h.slot, {...difficulty.byKey.get(h.key), id:h.slot, xp:20});
     const used = new Set([...locked.values()].map(q => q.name));
     const daily = categories.map((category, i) => {
       const id = boardSlots[i];
       if (locked.has(id)) return locked.get(id);
       const target = i < 2 ? tier : 1 + Math.abs(sequence + i) % tier;
-      const pool = habits.catalog.filter(q => q.category === category && q.tier === target);
+      const mode = journey?.fatigue(s,today) || 'normal';
+      const ranked = s.difficulty && Object.hasOwn(difficulty.categories,category) && mode==='normal';
+      const pool = ranked ? difficulty.catalog.filter(q=>q.category===category && q.rank===difficulty.rank(s,category))
+        : habits.catalog.filter(q => q.category === category && q.tier === (s.difficulty && mode!=='normal'?1:target));
       const offset = ((sequence + i) % pool.length + pool.length) % pool.length;
       for (let j = 0; j < pool.length; j++) {
         const q = pool[(offset + j) % pool.length];
@@ -261,7 +267,11 @@
       }
     });
     const urgent = legacy.find(q => q.urgent);
-    return urgent ? [...daily, urgent] : daily;
+    const mode=journey?.fatigue(s,today)||'normal';
+    const visible = s.difficulty ? daily.filter(q=>locked.has(q.id) || (mode!=='rest' &&
+      (mode!=='tired' || (!['strength','walk'].includes(q.category)&&q.minutes<=2)) &&
+      (mode!=='light' || q.minutes<=3) && !(q.category==='strength'&&difficulty.trainedRecently(s,today)))) : daily;
+    return urgent ? [...visible, urgent] : visible;
   }
 
   function periodGrowth(s, days, today = day()) {
@@ -274,7 +284,7 @@
       xp += d.xp;
       if (d.quests || d.focus) active++;
       for (const h of d.habitLog || []) {
-        const q = habits?.byKey.get(h.key);
+        const q = difficulty?.byKey.get(h.key);
         if (q?.category === 'walk') walk += q.minutes;
         if (q?.reps) reps += q.reps;
       }
@@ -296,27 +306,30 @@
   }
   function completeQuest(s, id, now = new Date()) {
     const q = s.quests.find(q => q.id === id), today = day(now);
-    if (!q || isDone(s, q.id, today)) return null;
+    if (!q || isDone(s, q.id, today) || difficulty.claimed(s,q,today)) return null;
     const d = dailyRecord(s, today);
     d.quests++;
     d.questIds.push(q.id);
-    if (q.stat === 'strength') d.trained = true;
+    if ((difficulty.identify(q)?.rank ? difficulty.identify(q).stat : q.stat) === 'strength') d.trained = true;
     s.completed[q.id] = today;
-    return award(s, q.xp, q.stat, q.name, 'quest', now);
+    difficulty.record(s,q,today);
+    const canonical=difficulty.identify(q);
+    return award(s, canonical?.rank?20:q.xp, canonical?.rank?canonical.stat:q.stat, q.name, 'quest', now);
   }
   function completeBoardQuest(s, id, shownDay, now = new Date(), shownKey) {
     if (shownDay !== day(now) || boardDone(s,id,shownDay)) return null;
     const q = boardQuests(s,now).find(q => q.id === id);
-    if (!q || (shownKey !== undefined && shownKey !== (q.key || q.name))) return null;
+    if (!q || difficulty.claimed(s,q,shownDay) || (shownKey !== undefined && shownKey !== (q.key || q.name))) return null;
     const d = dailyRecord(s,shownDay);
     if (q.key) {
       d.boardSetup ||= boardSetup(s, shownDay);
       (d.habitLog ||= []).push({slot:id, key:q.key});
-      if (q.stat === 'strength') d.trained = true;
+      if ((difficulty.identify(q)?.rank ? difficulty.identify(q).stat : q.stat) === 'strength') d.trained = true;
     }
     if (id === 'workout') d.trainingOfferDone = true;
     else if (['a','b','urgent'].includes(id)) (d.boardClaims ||= []).push(id);
     d.quests++;
+    difficulty.record(s,q,shownDay);
     return award(s,q.xp,q.stat,q.name,'quest',now);
   }
   function duePlan(p, today) {
@@ -342,13 +355,14 @@
   function completePlan(s, id, shownDay, now = new Date()) {
     if (shownDay !== day(now)) return null;
     const p = todayPlans(s, shownDay).pending.find(item => item.id === id);
-    if (!p) return null;
+    if (!p || difficulty.claimed(s,p,shownDay)) return null;
     const d = dailyRecord(s, shownDay);
     (d.planLog ||= []).push({id, name:p.name, stat:p.stat});
     if (!p.weekdays.length) s.plans = s.plans.filter(item => item.id !== id);
     d.quests++;
-    if (p.stat === 'strength') d.trained = true;
-    return award(s, 20, p.stat, p.name, 'quest', now);
+    if ((difficulty.identify(p)?.rank ? difficulty.identify(p).stat : p.stat) === 'strength') d.trained = true;
+    difficulty.record(s,p,shownDay);
+    return award(s, 20, difficulty.identify(p)?.rank?difficulty.identify(p).stat:p.stat, p.name, 'quest', now);
   }
   const trainingTarget = 3, trainingBonus = 40;
   function trainingWeek(s, today = day()) {
@@ -383,6 +397,6 @@
     return award(s, 40, 'intellect', '集中セッション', 'focus', now);
   }
   return { KEY, SCHEMA, names, badges, ranks, growth, day, shiftDay, weekStart, fresh, valid, migrate, progress, unlock,
-    habits, boardSetup, periodGrowth, isDone, boardDone, boardQuests, completeBoardQuest, completeQuest, completeFocus, trainingWeek, claimTrainingWeek, removeQuest,
+    difficulty, habits, boardSetup, periodGrowth, isDone, boardDone, boardQuests, completeBoardQuest, completeQuest, completeFocus, trainingWeek, claimTrainingWeek, removeQuest,
     duePlan, todayPlans, putPlan, completePlan };
 });

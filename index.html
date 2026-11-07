@@ -12,8 +12,8 @@
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-180.png">
-<link rel="stylesheet" href="./app.css?v=0.14.0">
-<link rel="stylesheet" href="./journey.css?v=0.14.0">
+<link rel="stylesheet" href="./app.css?v=0.15.0">
+<link rel="stylesheet" href="./journey.css?v=0.15.0">
 </head>
 <body>
 <svg class="icon-defs" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -51,7 +51,7 @@
     <svg class="brand-flame" aria-hidden="true"><use href="#stat-mind"/></svg>
     SOLO LIFE
   </a>
-  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.14</span></div>
+  <div class="header-meta"><time id="todayDate"></time><span class="version">v0.15</span></div>
 </header>
 <div class="page-intro">
   <h1 id="pageTitle">ホーム</h1>
@@ -71,6 +71,7 @@
   <p id="guildMessage" class="guild-message" aria-live="polite"></p>
   <div class="guild-checkin"><label for="guildFatigue">今日の調子</label><select id="guildFatigue"><option value="normal">いつもどおり</option><option value="light">軽めにしたい</option><option value="tired">疲れが強い</option><option value="rest">今日は休養する</option></select></div>
   <p id="guildEvidence" class="note"></p>
+  <div id="difficultyAdvice"></div>
   <div id="guildSuggestions"></div>
   <details class="guild-about"><summary>提案のしくみ</summary><p class="note">100種類のクエストから、毎日の目標・達成記録・今日の自己申告に合わせて候補を選びます。自由会話をするAIではありません。提案は端末内で処理し、追加料金や外部AI APIは使いません。体調の診断は行いません。つらいときは休養を優先できます。</p></details>
 </section>
@@ -104,7 +105,16 @@
     <select id="habitGoal"><option value="balance">バランスよく取り組む</option></select>
     <p class="note" id="boardLevel" aria-live="polite"></p>
   </div>
+  <details class="difficulty-settings" id="difficultySettings">
+    <summary>難易度を選ぶ · E / D / C / B / A</summary>
+    <p class="note">利用日数やゲームのレベルは実力の判定に使いません。分野ごとに希望の段階を選べます。未達成の候補にすぐ反映し、達成済みの記録は保持します。</p>
+    <div id="difficultyChoices" class="difficulty-choices"></div>
+    <p class="note">目安：E スクワット10回・歩行10分・勉強15分 → A 筋トレ45〜60分・歩行45分・勉強90分。従来の短い入門クエストも「クエスト」の候補から選べます。</p>
+    <p class="note">運動は自分に合う種目・負荷・フォームで。時間は準備と休憩を含む目安です。痛みや強い疲れがあるときは中止・休養し、短縮や分割も選べます。同じ筋肉は回復を待ちましょう。</p>
+    <p class="note">新シリーズはどの段階も20 XP。同じ分野は予定・登録クエストを含め1日1回です。難易度の変更・感想・段階の提案に追加報酬はありません。同じ行動を集中タイマーでも二重計上しないでください。</p>
+  </details>
   <div id="dailyOffers"></div>
+  <div id="difficultyFeedback"></div>
   <section id="urgentOffer" class="urgent-offer" aria-labelledby="urgentTitle" hidden>
     <div class="section-head"><h3 id="urgentTitle">緊急クエスト</h3><span>本日 23:59 まで</span></div>
     <div id="urgentRow"></div>
@@ -359,7 +369,7 @@
 <input type="file" id="import" accept="application/json,.json">
 <p class="note">旧バージョンのバックアップも読み込めます。過去の記録は保存されている範囲で復元します。端末間の自動同期には対応していません。</p>
 <button class="secondary" id="checkUpdate">更新を確認</button>
-<p class="note" id="appVersion">SOLO LIFE v0.14 · build 0.14.0</p>
+<p class="note" id="appVersion">SOLO LIFE v0.15 · build 0.15.0</p>
 </div>
 </section>
 <section class="screen" id="journey" aria-label="育成">
@@ -432,14 +442,16 @@
   <button class="primary" id="continueGrowth" autofocus>閉じる</button>
 </div>
 </dialog>
-<script src="./habits.js?v=0.14.0"></script>
-<script src="./journey.js?v=0.14.0"></script>
-<script src="./progress.js?v=0.14.0">
+<script src="./habits.js?v=0.15.0"></script>
+<script src="./difficulty.js?v=0.15.0"></script>
+<script src="./difficulty-ui.js?v=0.15.0"></script>
+<script src="./journey.js?v=0.15.0"></script>
+<script src="./progress.js?v=0.15.0">
 </script>
-<script src="./reminders.js?v=0.14.0"></script>
-<script src="./planner.js?v=0.14.0"></script>
-<script src="./journey-ui.js?v=0.14.0"></script>
-<script src="./app.js?v=0.14.0">
+<script src="./reminders.js?v=0.15.0"></script>
+<script src="./planner.js?v=0.15.0"></script>
+<script src="./journey-ui.js?v=0.15.0"></script>
+<script src="./app.js?v=0.15.0">
 </script>
 </body>
 </html>

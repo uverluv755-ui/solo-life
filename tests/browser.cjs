@@ -23,10 +23,11 @@ const upgradeReleases = [
   { version: 'v0.10.1', commit: '9138e3a' },
   { version: 'v0.11', commit: 'd63e97a' },
   { version: 'v0.12', commit: 'c109536' },
-  { version: 'v0.13', commit: '2d9f5fb' }
+  { version: 'v0.13', commit: '2d9f5fb' },
+  { version: 'v0.14', commit: '811bc60' }
 ].map(release => ({
   ...release,
-  files: Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name =>
+  files: Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js', ...(release.version==='v0.14'?['habits.js','journey.js','journey-ui.js','planner.js','journey.css','reminders.js']:[])].map(name =>
     [name, execFileSync('git', ['show', release.commit + ':' + name], { cwd: root })]))
 }));
 const v03Files = Object.fromEntries(['index.html', 'app.js', 'progress.js', 'app.css', 'sw.js'].map(name => [name, execFileSync('git', ['show', '92839fb:' + name], { cwd: root })]));
@@ -58,13 +59,13 @@ const setTime = async (page, time) => {
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
 };
 async function run(engine, url) {
-  if (process.env.FLOW === 'journey') {
+  if (['journey','difficulty'].includes(process.env.FLOW)) {
     const browser = await (engine === 'webkit' ? webkit.launch() : chromium.launch({channel:process.env.CHROME_CHANNEL || 'chrome'}));
     try {
       const context = await browser.newContext({...devices['iPhone 13'], timezoneId:'Asia/Tokyo', locale:'ja-JP', acceptDownloads:true});
-      await testJourney(await context.newPage(), url, path.join(output,engine+'-journey'));
+      await (process.env.FLOW==='difficulty'?require('./difficulty-flow.cjs'):testJourney)(await context.newPage(), url, path.join(output,engine+'-'+process.env.FLOW), async offline=>{if(engine==='webkit')disconnect=offline;else await context.setOffline(offline);});
       await context.close();
-      console.log(engine + ': journey feature and mobile layout tests passed');
+      console.log(engine + ': '+process.env.FLOW+' feature, mobile layout and offline tests passed');
     } finally { await browser.close(); }
     return;
   }
@@ -333,7 +334,7 @@ async function run(engine, url) {
       await tab(player, 'records');
       await player.locator('#checkUpdate').click();
       await Promise.all([player.waitForEvent('load'), player.locator('#applyUpdate').click()]);
-      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.14');
+      await player.waitForFunction(() => document.querySelector('.version').textContent === 'v0.15');
       assert.deepEqual(await saveOf(player), previousSave);
       assert.ok(await player.locator('#firstQuest').isHidden());
       if (engine === 'webkit') disconnect = true;
@@ -367,7 +368,7 @@ async function run(engine, url) {
     const goals = start.locator('#goalChoices');
     assert.equal(await goals.locator('button').count(), 10);
     const candidates = start.locator('#goalPreset');
-    assert.equal(await candidates.locator('option[value]:not([value=""])').count(), 113);
+    assert.equal(await candidates.locator('option[value]:not([value=""])').count(), 188);
     for (const [goal, stat] of [['筋トレ','strength'], ['勉強','intellect'], ['仕事','discipline'], ['美容','discipline'], ['健康','health']]) {
       await goals.getByRole('button', { name: goal, exact: true }).click();
       assert.deepEqual(await candidates.locator('optgroup').evaluateAll(groups => groups.map(g => g.label)), [goal]);
@@ -449,6 +450,9 @@ async function run(engine, url) {
     const journeyContext = await browser.newContext({...devices['iPhone 13'], timezoneId:'Asia/Tokyo', locale:'ja-JP', acceptDownloads:true});
     await testJourney(await journeyContext.newPage(), url, path.join(output, engine + '-journey'));
     await journeyContext.close();
+    const difficultyContext=await browser.newContext({...devices['iPhone 13'],timezoneId:'Asia/Tokyo',locale:'ja-JP',acceptDownloads:true});
+    await require('./difficulty-flow.cjs')(await difficultyContext.newPage(),url,path.join(output,engine+'-difficulty'),async offline=>{if(engine==='webkit')disconnect=offline;else await difficultyContext.setOffline(offline);});
+    await difficultyContext.close();
     console.log(engine + ': guild, measurements, goal bosses, evolution, skills, full backup, failed saves and mobile/desktop layouts passed');
   } finally { await browser.close(); }
 }

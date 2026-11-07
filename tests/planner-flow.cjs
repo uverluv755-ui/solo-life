@@ -12,7 +12,7 @@ module.exports = async function testPlanner(page, url, screenshotPath) {
   await page.clock.install({time:new Date('2026-11-05T12:00:00+09:00')});
   await page.goto(url);
   await page.waitForFunction(() => !!navigator.serviceWorker.controller);
-  assert.equal(await page.locator('.version').innerText(),'v0.14');
+  assert.equal(await page.locator('.version').innerText(),'v0.15');
   await name.fill('図書館に本を返す');
   await name.press('Enter');
   await list.getByRole('button', {name:'完了：図書館に本を返す'}).waitFor();

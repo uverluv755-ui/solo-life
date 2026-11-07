@@ -1,7 +1,7 @@
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('./habits.js'));
-  else root.SoloJourney = factory(root.SoloHabits);
-})(globalThis, function (H) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./habits.js'),require('./difficulty.js'));
+  else root.SoloJourney = factory(root.SoloHabits,root.SoloDifficulty);
+})(globalThis, function (H,D) {
   'use strict';
   const day = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
   const validDay = d => typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) && day(new Date(d+'T12:00:00')) === d;
@@ -65,7 +65,7 @@
       if(d>=day(recentStart) && d<=today && h.type!=='focus') recentNames.add(h.label);
     }
     const recentKeys = new Set([...recent.flatMap(([,v])=>(v.habitLog||[]).map(h=>h.key)),
-      ...H.catalog.filter(q=>recentNames.has(q.name)).map(q=>q.key)]);
+      ...D.all.filter(q=>recentNames.has(q.name)).map(q=>q.key)]);
     const done = s.daily[today];
     const doneKeys = new Set((done?.habitLog||[]).map(h=>h.key));
     const names = new Set([...(done?.planLog||[]).map(p=>p.name), ...(s.plans||[]).map(p=>p.name),
@@ -79,7 +79,8 @@
     })();
     const maxTier = mode==='normal' ? (active.filter(d=>d<today).length>=30?3:active.filter(d=>d<today).length>=7?2:1) : 1;
     if (mode==='rest') return {mode,quests:[],message:'今日は休養を選びました。行動の提案はお休みです。目標ボスの進捗と習得スキルはそのまま残ります。',active:recent.filter(([,d])=>d.quests||d.focus).length};
-    const pool = H.catalog.filter(q=>q.tier<=maxTier && !doneKeys.has(q.key) && !names.has(q.name) &&
+    const source=s.difficulty ? [...H.catalog.filter(q=>!Object.hasOwn(D.categories,q.category)||mode!=='normal'), ...D.catalog.filter(q=>mode==='normal'&&q.rank===D.rank(s,q.category))] : H.catalog;
+    const pool = source.filter(q=>(q.rank || q.tier<=maxTier) && !D.claimed(s,q,today) && !doneKeys.has(q.key) && !names.has(q.name) &&
       (mode!=='tired' || (!['strength','walk'].includes(q.category) && q.minutes<=2)) &&
       (mode!=='light' || q.minutes<=3) && (!trainedRecently || q.category!=='strength'));
     const score = q => (q.category===goal?20:0) + (!recentKeys.has(q.key)?5:0) - q.minutes/10;
@@ -88,7 +89,7 @@
     for(const q of pool) { if(categories.has(q.category)) continue; selected.push(q); categories.add(q.category); if(selected.length===3) break; }
     return {mode, active:recent.filter(([,d])=>d.quests||d.focus).length,
       message:mode==='tired'?'疲れが強い日は、休養も選べます。行うなら短い身支度やメモから。':mode==='light'?'今日は入門の短い行動から。できそうなものだけ選んでください。':trainedRecently?'最近の筋トレ記録を踏まえ、筋トレ以外の候補を選びました。':'今日の一歩を、あなたの目標と記録から選びました。',
-      quests:selected.map(q=>({...q,reason:[q.category===goal?'選択した目標に合う': '別の分野にも小さな一歩',!recentKeys.has(q.key)?'直近7日の達成にない候補':'最近取り組んだ行動',H.levels[q.tier-1]].join(' · ')}))};
+      quests:selected.map(q=>({...q,reason:[q.category===goal?'選択した目標に合う': '別の分野にも小さな一歩',!recentKeys.has(q.key)?'直近7日の達成にない候補':'最近取り組んだ行動',D.label(q)].join(' · ')}))};
   }
   function putBody(s,r,editing=false) {
     if(!validBody(r) || r.day>day()) return '日付・種目・数値を確認してください';

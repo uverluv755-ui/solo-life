@@ -113,6 +113,7 @@
     else render();
   }
   const renderPlans = window.SoloPlanner?.init({C, $, el, statIcon, updateSaved, recordReward, refresh:render, toast});
+  const renderDifficulty = window.SoloDifficultyUI?.init({C,$,el,updateSaved,refresh:render,toast});
   const renderJourney = window.SoloJourneyUI?.init({C, $, el, updateSaved, refresh:render, toast});
   const goalSelect = $('habitGoal');
   if (goalSelect && C.habits) {
@@ -125,17 +126,18 @@
     };
   }
   function boardRow(q, today) {
-    const done = C.boardDone(s, q.id, today);
+    const achieved=C.boardDone(s,q.id,today);
+    const done = achieved || C.difficulty.claimed(s,q,today);
     const row = el('div', done ? 'quest completed' : 'quest');
     row.dataset.stat = q.stat;
     const name = el('div', 'name', q.name);
     const workout = q.id === 'workout';
     const category = q.key ? C.habits.categories[q.category] : workout ? '今日の筋トレ' : C.names[q.stat];
-    const difficulty = q.tier ? ' · ' + C.habits.levels[q.tier - 1] : '';
+    const difficulty = q.key ? ' · ' + C.difficulty.label(q) : '';
     const reward = el('small', '', category + difficulty + ' · ' + q.minutes + '分 · ');
     reward.append(el('span', 'xp', '+' + q.xp + ' XP'));
     name.append(reward);
-    const button = el('button', '', done ? '達成済み' : '達成');
+    const button = el('button', '', achieved ? '達成済み' : done ? '本日報酬済み' : '達成');
     button.disabled = saveLocked || done;
     button.setAttribute('aria-label', q.name + 'を達成');
     button.onclick = () => recordReward(button, data => C.completeBoardQuest(data, q.id, today, new Date(), q.key || q.name));
@@ -169,7 +171,7 @@
       const {goal, tier} = C.boardSetup(s, today);
       const label = C.habits.levels[tier - 1];
       const next = tier === 1 ? '累計7日のクエスト達成で「習慣」へ' : tier === 2 ? '累計30日のクエスト達成で「挑戦」へ' : '3段階すべてのクエストが対象';
-      $('boardLevel').textContent = goal !== goalSelect.value
+      $('boardLevel').textContent = s.difficulty ? '分野ごとの希望難易度を使用中。体調・休養に合わせて候補を調整します。' : goal !== goalSelect.value
         ? '今日は' + (C.habits.categories[goal] || 'バランス') + 'の提案です。新しい目標は明日から反映します。'
         : '今日の段階は' + label + '。' + next + '。';
     }
@@ -179,6 +181,7 @@
     $('urgentOffer').hidden = !urgent;
     $('urgentRow').replaceChildren(...(urgent ? [boardRow(urgent, today)] : []));
     if ($('trainingDays')) renderTraining(today);
+    renderDifficulty?.(s,today,saveLocked);
     reminder?.sync();
   }
   let period = 7;
@@ -252,9 +255,10 @@
     }));
     let completed = 0;
     $('quests').replaceChildren(...s.quests.map(q => {
-      const done = C.isDone(s, q.id, today);
-      if (done) completed++;
-      const row = el('div', 'quest' + (done ? ' completed' : '')), button = el('button', '', done ? '済' : '達成');
+      const achieved=C.isDone(s,q.id,today);
+      const done = achieved || C.difficulty.claimed(s,q,today);
+      if (achieved) completed++;
+      const row = el('div', 'quest' + (done ? ' completed' : '')), button = el('button', '', achieved ? '済' : done ? '本日報酬済み' : '達成');
       row.dataset.stat = q.stat;
       button.disabled = done || saveLocked;
       button.setAttribute('aria-label', q.name + 'を達成');
@@ -337,13 +341,13 @@
     for (const [id, label] of Object.entries(C.habits.categories)) {
       let group = [...presetSelect.querySelectorAll('optgroup')].find(g => g.label === label);
       if (!group) { group = el('optgroup'); group.label = label; presetSelect.append(group); }
-      for (const q of C.habits.catalog.filter(q => q.category === id)) {
+      for (const q of C.difficulty.all.filter(q => q.category === id)) {
         if ([...group.children].some(option => option.text === q.name)) continue;
         const key = 'habit-' + q.key;
         const option = new Option(q.name, key);
-        option.label = C.habits.levels[q.tier - 1] + ' · ' + q.name;
+        option.label = C.difficulty.label(q) + ' · ' + q.name;
         group.append(option);
-        habitPresets.set(key, [q.stat, [20,40,80][q.tier - 1]]);
+        habitPresets.set(key, [q.stat, q.rank?20:[20,40,80][q.tier - 1]]);
       }
     }
   }
@@ -396,7 +400,7 @@
       return toast('同じ名前のクエストは登録済みです。既存のクエストをご利用ください');
     }
     const previousQuests = s.quests;
-    s.quests = [...s.quests, { id: 'q' + Date.now() + Math.random().toString(36).slice(2, 7), name, stat: $('qstat').value, xp: Number($('qxp').value) }];
+    s.quests = [...s.quests, { id: 'q' + Date.now() + Math.random().toString(36).slice(2, 7), name, stat: C.difficulty.identify({name})?.rank ? C.difficulty.identify({name}).stat : $('qstat').value, xp: C.difficulty.identify({name})?.rank ? 20 : Number($('qxp').value) }];
     if (!save()) { s.quests = previousQuests; return; }
     $('qname').value = '';
     $('goalPreset').value = '';
